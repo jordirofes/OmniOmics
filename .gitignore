@@ -1,4 +1,4 @@
-
+^.*\.Rproj$
 .Rhistory
 .Rproj.user/8CF1EAD2/cpp-definition-cache
 .Rproj.user/shared/notebooks/9BAD291A-Workflow/1/8CF1EAD2FE51A6BC/lib/plotly-main-1.57.1/plotly-latest.min.js
