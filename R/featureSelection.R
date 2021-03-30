@@ -1,7 +1,27 @@
+# Variance plot
 #'@export
-featureVarPlot <- function(features, interactive = TRUE){
-    feat_sd <- sort(apply(exprs(features), 1, sd))
+setGeneric("featureVarPlot", function(features, ...){
+    standardGeneric("featureVarPlot")
+})
+#'@export
+setMethod("featureVarPlot", "ExpressionSet",
+            function(features, varfun, interactive){
+    feat_sd <- sort(apply(exprs(features), 1, varfun))
     feat_index <- 1:nrow(features)
+    p <- varPlot(feat_index = feat_index, feat_sd = feat_sd,
+                    interactive = interactive)
+    return(p)
+})
+#'@export
+setMethod("featureVarPlot", "SummarizedExperiment",
+            function(features, varfun, interactive){
+    feat_sd <- sort(apply(assay(features), 1, varfun))
+    feat_index <- 1:nrow(features)
+    p <- varPlot(feat_index = feat_index, feat_sd = feat_sd,
+                    interactive = interactive)
+    return(p)
+})
+varPlot <- function(feat_index, feat_sd, interactive = TRUE){
     p <- ggStandardPlot(dt = list(feat_index, feat_sd), plottype = "scatter",
                     ptitle = "Distribution of feature variability",
                     xlab = "Feature Index", ylab = "Standard deviation",
@@ -13,20 +33,35 @@ featureVarPlot <- function(features, interactive = TRUE){
     }
     return(p)
 }
+
 #'@export
-geneFeatureFilter <- function(features, entrez, varfilt, varcutoff){
+geneFeatureFilter <- function(features, entrez, varfilt, varcutoff, var.func){
     return(nsFilter(features, require.entrez = entrez, remove.dupEntrez = TRUE,
-                var.filter = varfilt, var.func = IQR, var.cutoff = varcutoff,
+                var.filter = varfilt, var.func = var.func, var.cutoff = varcutoff,
                 filterByQuantile = TRUE))
 }
-
 #'@export
-metabFeatureFilter <- function(features, thint, snr, ism0, hasan){
-    rowData(features) %>% mutate(idx_int = assay(features))
-
-    data.frame(int = apply(assay(features), 1, function(x){any(x >= thint)}, snr))
+metabFeatureFilter <- function(features, intensity_thr, ism0, hasan){
+    feature_info <- data.frame()
+    if(!missing(intensity_thr)){
+        feature_info$intensity <- apply(assay(features), 1,
+                                        function(x){any(x >= thint)})
+    }
+    if(ism0){
+        feature_info$ism0 <- grepl("M0", rowData(features)$isotope)
+    }
+    if(hasan){
+        feature_info$hasan <- !is.na(rpwData(features)$annotation)
+    }
+    filt_indx <- apply(feature_info, 1, function(x){all(x)})
     return(features[filt_indx,])
 }
+
+
+groupFeatureFilter <- function(features, phenovar){
+
+}
+
 #'@export
 # Machine learning feature selection
 featureSign <- function(features, phenoVar, boot){

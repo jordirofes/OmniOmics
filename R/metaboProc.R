@@ -80,9 +80,7 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
                                   getPeaklistanClique(clic_an))
             annot <- lapply(featureDefinitions(peakDt)$peakidx, function(x){
                 l <- lapply(x, function(y){
-                    if(is.na(joint_cp[y, 13])){
-                        return(NA)
-                    } else{
+                    if(!is.na(joint_cp[y, 13])){
                         return(joint_cp[y, 13:28])
                     }
                 })
