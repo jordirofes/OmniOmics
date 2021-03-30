@@ -1,9 +1,30 @@
-# Main function that processes and annotates an MSnExp with the XCMS workflow
-# camera and CliqueMS
-metaboProc <- function(object,polarity = "positive", peakwidth, noise,
-                        snthresh, ppm, expandrt, binsize, minFraction, bw,
-                        annotation = "camera", cliqsamp = NA,mergepeaks = TRUE,
-                        rtadjust = TRUE, group = TRUE, fill = TRUE){
+# Main function that processes and annotates an MSnExp with the XCMS workflow,
+# camera and cliqueMS
+
+metaboImport <- function(filedir, filelabels){
+    if(dir.exists(filedir)){
+        met_files <- list.files(filedir, pattern = "\\.[mM][zZ]?[xX][mM][lL]$",
+                                full.names = TRUE)
+        pd <- data.frame(sample_name = basename(met_files),
+                        sample_group = filelabels,
+                        stringsAsFactors = FALSE)
+        mz_dt <- readMSData(files = met_files, mode = "onDisk", pdata = new("NAnnotatedDataFrame",pd))
+        return(mz_dt)
+    } else{
+        pd <- data.frame(sample_name = basename(filedir),
+                         sample_group = grouplabels,
+                         stringsAsFactors = FALSE)
+        mz_dt <- readMSData(files = filedir, mode = "onDisk", pdata = new("NAnnotatedDataFrame",pd))
+        return(mz_dt)
+    }
+}
+
+metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
+                        noise, snthresh, ppm, expandrt, binsize, minFraction,
+                        bw, annotation = "camera", cliqsamp = NA,
+                        mergepeaks = TRUE, rtadjust = TRUE, group = TRUE,
+                        fill = TRUE,summ = TRUE){
+    # Changes some parameters if there is only one sample
     if(dim(object)[1] == 1){
         rtadjust <- FALSE
         group <- FALSE
@@ -25,57 +46,79 @@ metaboProc <- function(object,polarity = "positive", peakwidth, noise,
     }
     if(group){
         # Grouping features
-        groupParam <- PeakDensityParam(sampleGroups = peakDt$sample_group,
+        groupParam <- PeakDensityParam(
+            sampleGroups = phenoData(peakDt)@data[,groupvar],
                             minFraction = minFraction, bw = bw)
+        peakDt <- groupChromPeaks(peakDt, param = groupParam)
+
     }
     if(annotation == "cliqueMS"){
+        # cliqueMS annotation
         clic_an <- cliqueAnot(object = peakDt, cliqsamp = cliqsamp,
                               polarity = polarity, ppm = ppm)
     }
     if(fill){
-        peakDt <- groupChromPeaks(peakDt, param = groupParam)
         # Peak filling
         peakDt <- fillChromPeaks(peakDt)
     }
     if(annotation == "none"){
         return(peakDt)
     } else if(annotation == "camera"){
+        # camera annotation
         xcms_set <- as(peakDt, "xcmsSet")
-        sampclass(xcms_set) <- peakDt@phenoData@data$sample_group
+        sampclass(xcms_set) <- phenoData(peakDt)@data[,groupvar]
         cam_an <- CAMERA::annotate(xcms_set, polarity = polarity)
-        return(list(peakDt, cam_an))
+        featureDefinitions(peakDt) <- cbind(
+            featureDefinitions(peakDt), getPeaklist(cam_an)[,c("isotopes",
+                                                                "adduct")])
+        res <- quantify(peakDt)
+        return(list(peakDt, cam_an, res))
     } else if(annotation == "cliqueMS"){
-        return(list(peakDt, clic_an))
+
+        if(!is.na(cliqsamp)){
+            joint_cp <- left_join(as.data.frame(chromPeaks(peakDt)),
+                                  getPeaklistanClique(clic_an))
+            annot <- lapply(featureDefinitions(peakDt)$peakidx, function(x){
+                l <- lapply(x, function(y){
+                    if(is.na(joint_cp[y, 13])){
+                        return(NA)
+                    } else{
+                        return(joint_cp[y, 13:28])
+                    }
+                })
+                if(all(is.na(l))){
+                    return(NA)
+                } else{
+                    return(l)
+                }
+            })
+            featureDefinitions(peakDt)$annotation <- annot
+        }
+        feat_list <- quantify(peakDt)
+        return(list(peakDt, clic_an, feat_list))
     }
-    return(peakDt)
+    feat_list <- quantify(peakDt)
+    return(list(peakDt, feat_list))
 }
 
 # wrapper function for cliqueMS full annotation
 cliqueAnot <- function(object, cliqsamp = NA, seed = 1234, ppm, polarity){
     set.seed(seed)
+    # cliqueMS adduct data
     if(polarity == "positive"){
-        data("positive.adinfo")
+        data("positive.adinfo", package = "cliqueMS")
         adduct_list <- positive.adinfo
     } else if(polarity == "negative"){
-        data("negative.adinfo")
+        data("negative.adinfo", package = "cliqueMS")
         adduct_list <- negative.adinfo
     }
     if(!is.na(cliqsamp)){
         object <- filterFile(object, cliqsamp)
     }
+    # cliqueMS workflow
     clic_an <- getCliques(object, filter = TRUE)
     clic_an <- getIsotopes(clic_an, ppm = ppm)
     clic_an <- getAnnotation(clic_an, ppm = ppm, adinfo = adduct_list,
                             polarity = polarity)
-    # if(!is.na(cliqsamp)){
-    #     featureDefinitions(object)$clicIndex <- objectlapply(
-    #         1:nrow(featureDefinitions(object)), function(x){
-    #         which(between(clic_an@peaklist$mz,
-    #                     featureDefinitions(object)[x, "mzmin"],
-    #                     featureDefinitions(object)[x, "mzmax"]) &
-    #                 between(ex.Adducts2@peaklist$rt,
-    #                     featureDefinitions(object)[x, "rtmin"],
-    #                     featureDefinitions(object)[x, "rtmax"]))
-    #     })
     return(clic_an)
 }
