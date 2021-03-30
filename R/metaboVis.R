@@ -1,3 +1,16 @@
+#'@import ggplot2
+#'@importFrom plotly ggplotly
+#'@import oligo
+#'@import beadarray
+#'@importFrom genefilter nsFilter
+#'@import xcms
+#'@import biosigner
+#'@import xlxs
+#'@import CAMERA
+#'@import cliqueMS
+#'@import dplyr
+#'
+#'@export
 # Creates a ggplot2 chromatogram or EIC from an XCMS object
 ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
                         chromtype = "max", logscale = TRUE, interactive = TRUE){
@@ -37,7 +50,7 @@ ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
     }
     return(p)
 }
-
+#'@export
 # Creates a violin/boxplot TIC plot from an XCMS object
 ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
                         violin, interactive = TRUE, injection_order = TRUE,

@@ -1,6 +1,6 @@
 # Main function that processes and annotates an MSnExp with the XCMS workflow,
 # camera and cliqueMS
-
+#'@export
 metaboImport <- function(filedir, filelabels){
     if(dir.exists(filedir)){
         met_files <- list.files(filedir, pattern = "\\.[mM][zZ]?[xX][mM][lL]$",
@@ -18,7 +18,7 @@ metaboImport <- function(filedir, filelabels){
         return(mz_dt)
     }
 }
-
+#'@export
 metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
                         noise, snthresh, ppm, expandrt, binsize, minFraction,
                         bw, annotation = "camera", cliqsamp = NA,
@@ -100,7 +100,7 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
     feat_list <- quantify(peakDt)
     return(list(peakDt, feat_list))
 }
-
+#'@export
 # wrapper function for cliqueMS full annotation
 cliqueAnot <- function(object, cliqsamp = NA, seed = 1234, ppm, polarity){
     set.seed(seed)
@@ -116,9 +116,9 @@ cliqueAnot <- function(object, cliqsamp = NA, seed = 1234, ppm, polarity){
         object <- filterFile(object, cliqsamp)
     }
     # cliqueMS workflow
-    clic_an <- getCliques(object, filter = TRUE)
-    clic_an <- getIsotopes(clic_an, ppm = ppm)
-    clic_an <- getAnnotation(clic_an, ppm = ppm, adinfo = adduct_list,
+    clic_an <- cliqueMS::getCliques(object, filter = TRUE)
+    clic_an <- cliqueMS::getIsotopes(clic_an, ppm = ppm)
+    clic_an <- cliqueMS::getAnnotation(clic_an, ppm = ppm, adinfo = adduct_list,
                             polarity = polarity)
     return(clic_an)
 }
