@@ -170,10 +170,12 @@ list.idatfiles <- function(...){
 setGeneric("procTranscript", function(object, method){
     standardGeneric("procTranscript")
 })
+#'@export
 setMethod("procTranscript", "ExpressionSetIllumina",
             function(object, method = "quantile"){
     return(normaliseIllumina(object, method = method))
 })
+#'@export
 setMethod("procTranscript", "GeneFeatureSet", function(object){
     return(oligo::rma(object))
 })

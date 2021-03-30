@@ -18,10 +18,12 @@ geneFeatureFilter <- function(features, entrez, varfilt, varcutoff){
                 var.filter = varfilt, var.func = IQR, var.cutoff = varcutoff,
                 filterByQuantile = TRUE))
 }
+
+
 metabFeatureFilter <- function(features, thint, snr, ism0, hasan){
     rowData(features) %>% mutate(idx_int = assay(features))
 
-    data.frame(int = apply(assay(features), 1, function(x){any(x >= thint)}, snr)
+    data.frame(int = apply(assay(features), 1, function(x){any(x >= thint)}, snr))
     return(features[filt_indx,])
 }
 
