@@ -58,7 +58,7 @@ ggDensityPlot <- function(object, groupvar, interactive, nsamp = 10000,
 #'@title Microarray sample PCA plot
 #'@author Jordi Rofes Herrera
 #'@description Creates a PCA plot from a microarray object with `exprs()` such as an ExpressionSet
-#'@param object A microarray data in a ExpressionSet or GeneFeatureSet
+#'@param object Microarray data from a ExpressionSet or GeneFeatureSet
 #'@param pc A vector of length two indicanting the principal components to plot on each axis
 #'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
 #'@param interactive A boolean indicating if the plot will be converted to an interactive `ggplotly()`
@@ -106,7 +106,7 @@ ggpcaPlot <- function(object, pc = c(1,2), groupvar,
 #'plot_crayons()
 #'@export
 importRawTranscript <- function(datapath, sampledata, geoid, header = TRUE, sep = ","){
-    if(!is.na(geoid)){
+    if(!missing(geoid)){
         dt <- GEOquery::getGEO(geoid)
         if(dim(featureData(dt[[1]]))[2] == 0){
             stop("The selected accession entry data has no features")
@@ -123,8 +123,8 @@ importRawTranscript <- function(datapath, sampledata, geoid, header = TRUE, sep 
             }
         }
     }
-    if(dir.exists(pathfile)){
-        if(length(list.celfiles(pathfile)) != 0){
+    if(dir.exists(datapath)){
+        if(length(list.celfiles(datapath)) != 0){
             if(missing(sampledata)){
                 files <- list.files(datapath)
                 if(grepl("\\.[cC][sS][vV]$", files)){
@@ -136,18 +136,18 @@ importRawTranscript <- function(datapath, sampledata, geoid, header = TRUE, sep 
                         files[grepl("\\.[xX][lL][sS]?[xX]$")])
                 }
             }
-            return(read.celfiles(list.celfiles(pathfile, full.names = TRUE),
+            return(read.celfiles(list.celfiles(datapath, full.names = TRUE),
                                 phenoData = sampledata))
         }
-        if(length(list.idatfiles(pathfile)) != 0){
-            return(readIdatFiles(list.idatfiles(pathfile, full.names = TRUE)))
+        if(length(list.idatfiles(datapath)) != 0){
+            return(readIdatFiles(list.idatfiles(datapath, full.names = TRUE)))
         }
     } else{
-        if(any(grepl("\\.[cC][eE][lL]$", pathfile))){
-            return(read.celfiles(pathfile, phenoData = sampledata))
+        if(any(grepl("\\.[cC][eE][lL]$", datapath))){
+            return(read.celfiles(datapath, phenoData = sampledata))
         }
-        if(any(grepl("\\.[iI][dD][aA][tT]$", pathfile))){
-            return(readIdatFiles(pathfile))
+        if(any(grepl("\\.[iI][dD][aA][tT]$", datapath))){
+            return(readIdatFiles(datapath))
         }
     }
 }

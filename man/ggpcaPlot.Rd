@@ -7,7 +7,7 @@
 ggpcaPlot(object, pc = c(1, 2), groupvar, scale = TRUE, interactive = TRUE)
 }
 \arguments{
-\item{object}{A microarray data in a ExpressionSet or GeneFeatureSet}
+\item{object}{Microarray data from a ExpressionSet or GeneFeatureSet}
 
 \item{pc}{A vector of length two indicanting the principal components to plot on each axis}
 

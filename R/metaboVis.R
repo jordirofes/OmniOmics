@@ -5,7 +5,7 @@
 #'@importFrom genefilter nsFilter
 #'@import xcms
 #'@import biosigner
-#'@import xlxs
+#'@import xlsx
 #'@import CAMERA
 #'@import cliqueMS
 #'@import dplyr
