@@ -63,49 +63,32 @@ ggDensityPlot <- function(object, groupvar, interactive, nsamp = 10000,
 #'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
 #'@param interactive A boolean indicating if the plot will be converted to an interactive `ggplotly()`
 #'@param scale A boolan indicating if the PCA will be scaled, (the default is TRUE).
-#'@param nsamp The number of samples used in the plotting to reduce computation time
 #'@return Returns a ggplot object or a ggplotly
 #'@examples
 #'plot_crayons()
 #'@export
-ggpcaPlot <- function(object, pc = c(1,2), groupvar,
+ggPCAplot <- function(object, pc = c(1,2), groupvar,
                         scale = TRUE, interactive = TRUE){
-    if(length(pc) != 2){
-        pc <- c(1,2)
-    }
-    dt <- exprs(object)
-    pcdt <- prcomp(t(dt), scale = scale)
-    plabs <- colnames(dt)
-    groups <- phenoData(object)[[groupvar]]
-    pcvar <- round(pcdt$sdev^2/sum(pcdt$sdev^2)*100, 2)
-    pcvar <- pcvar[pc]
-    pcdt <- pcdt$x[,pc]
-    pcdt <- as.list.data.frame(as.data.frame(pcdt))
-    p <- ggStandardPlot(dt = pcdt, plabs = plabs, groups = groups,
-                        plottype = "scatter", ptitle = "PCA plot",
-                        xlab = paste0("PC ", pc[1], " (", pcvar[pc[1]], "%)"),
-                        ylab = paste0("PC ", pc[2], " (", pcvar[pc[2]], "%)"),
-                        origin_lines = TRUE)
-    if(interactive){
-        return(ggplotly(p))
-    }
+    pcdt <- multipca(object, scale)
+    p <- pcaPlot(pcdt, object, pc, groupvar, interactive)
+    return(p)
 }
-
 #'@title Wrapper function for .idat, .cel and geoDatasets importing
 #'@author Jordi Rofes Herrera
 #'@description Imports .idat, .cel files from microarray expression data into their respective formats and the download of geoDatasets.
 #'To import illumina datasets it is required the appropiate annotation package
 #'@param datapath A string with the directory where the files are located or a vector with all the files to import
-#'@param sampledata A string indicating the phenodata location as a comma separated values or excel file.
+#'@param phenodata A string indicating the phenodata location as a comma separated values or excel file.
 #'@param geoid A string indicating a geoDataset accesion entry
-#'@param header A boolean indicating if the sampledata has a header with the variable names
-#'@param sep A string indicating the separator of the sampledata file if it's a .csv file, usually a space or a comma.
+#'@param header A boolean indicating if the phenodata has a header with the variable names
+#'@param sep A string indicating the separator of the phenodata file, if it's a .csv file, usually a space or a comma.
 #'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
 #'@return Returns an object with the expression data.
 #'@examples
 #'plot_crayons()
 #'@export
-importRawTranscript <- function(datapath, sampledata, geoid, header = TRUE, sep = ","){
+transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ","){
+    # Searches fot a geo dataset if the geoid argument is not missing
     if(!missing(geoid)){
         dt <- GEOquery::getGEO(geoid)
         if(dim(featureData(dt[[1]]))[2] == 0){
@@ -114,37 +97,38 @@ importRawTranscript <- function(datapath, sampledata, geoid, header = TRUE, sep 
             return(dt)
         }
     }
-    if(!missing(sampledata)){
-        if(is.character(sampledata)){
-            if(grepl("\\.[cC][sS][vV]$", sampledata)){
-                sampledata <- read.csv(sampledata, header = header, sep = sep)
-            } else if(grepl("\\.[xX][lL][sS]?[xX]$", sampledata)){
-                sampledata <- read_excel(sampledata)
+    # If the phenodata is given, loads it
+    if(!missing(phenodata)){
+        if(is.character(phenodata)){
+            if(grepl("\\.[cC][sS][vV]$", phenodata)){
+                phenodata <- read.csv(phenodata, header = header, sep = sep)
+            } else if(grepl("\\.[xX][lL][sS][xX]?$", phenodata)){
+                phenodata <- read_excel(phenodata)
             }
         }
     }
     if(dir.exists(datapath)){
         if(length(list.celfiles(datapath)) != 0){
-            if(missing(sampledata)){
+            if(missing(phenodata)){
                 files <- list.files(datapath)
                 if(grepl("\\.[cC][sS][vV]$", files)){
-                    sampledata <- read.csv(files[grepl("\\.[cC][sS][vV]$",
+                    phenodata <- read.csv(files[grepl("\\.[cC][sS][vV]$",
                                                         files)],
                                             header = header, sep = sep)
-                } else if(grepl("\\.[xX][lL][sS]?[xX]$", files)){
-                    sampledata <- read_excel(
-                        files[grepl("\\.[xX][lL][sS]?[xX]$")])
+                } else if(grepl("\\.[xX][lL][sS][xX]?$", files)){
+                    phenodata <- read_excel(
+                        files[grepl("\\.[xX][lL][sS][xX]?$")])
                 }
             }
             return(read.celfiles(list.celfiles(datapath, full.names = TRUE),
-                                phenoData = sampledata))
+                                phenoData = phenodata))
         }
         if(length(list.idatfiles(datapath)) != 0){
             return(readIdatFiles(list.idatfiles(datapath, full.names = TRUE)))
         }
     } else{
         if(any(grepl("\\.[cC][eE][lL]$", datapath))){
-            return(read.celfiles(datapath, phenoData = sampledata))
+            return(read.celfiles(datapath, phenoData = phenodata))
         }
         if(any(grepl("\\.[iI][dD][aA][tT]$", datapath))){
             return(readIdatFiles(datapath))
@@ -167,7 +151,7 @@ list.idatfiles <- function(...){
 #'@examples
 #'plot_crayons()
 #'@export
-setGeneric("procTranscript", function(object, method){
+setGeneric("procTranscript", function(object, method, annotationTable){
     standardGeneric("procTranscript")
 })
 #'@export
@@ -176,6 +160,8 @@ setMethod("procTranscript", "ExpressionSetIllumina",
     return(normaliseIllumina(object, method = method))
 })
 #'@export
-setMethod("procTranscript", "GeneFeatureSet", function(object){
-    return(oligo::rma(object))
+setMethod("procTranscript", "GeneFeatureSet", function(object, annotationTable){
+    norm_gene <- oligo::rma(object)
+    annotation(norm_gene) <- annotationTable
+    return(norm_gene)
 })

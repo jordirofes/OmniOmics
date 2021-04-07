@@ -1,22 +1,48 @@
 # Main function that processes and annotates an MSnExp with the XCMS workflow,
 # camera and cliqueMS
 #'@export
-metaboImport <- function(filedir, filelabels){
-    if(dir.exists(filedir)){
-        met_files <- list.files(filedir, pattern = "\\.[mM][zZ]?[xX][mM][lL]$",
-                                full.names = TRUE)
-        pd <- data.frame(sample_name = basename(met_files),
-                        sample_group = filelabels,
-                        stringsAsFactors = FALSE)
-        mz_dt <- readMSData(files = met_files, mode = "onDisk", pdata = new("NAnnotatedDataFrame",pd))
-        return(mz_dt)
-    } else{
-        pd <- data.frame(sample_name = basename(filedir),
-                         sample_group = grouplabels,
-                         stringsAsFactors = FALSE)
-        mz_dt <- readMSData(files = filedir, mode = "onDisk", pdata = new("NAnnotatedDataFrame",pd))
-        return(mz_dt)
+phenoImport <- function(file, header, sep){
+    if(dir.exists(file)){
+        file <- list.files(file, full.names = TRUE)
     }
+    csv_patt <- "\\.[cC][sS][vV]$"
+    xls_patt <- "\\.[xX][lL][sS][xX]?$"
+    tsv_patt <- "\\.[tT][sS][vV]$"
+    txt_patt <- "\\.[tT][xX][tT]$"
+    if(any(grepl(csv_patt, file))){
+        idx <- grep(csv_patt, file)
+    } else if(any(grepl(xls_patt, file))){
+        idx <- grep(xls_patt, file)
+        phenodata <- read_excel(file[idx])
+        return(phenodata)
+    } else if(any(grepl(tsv_patt, file))){
+        idx <- grep(tsv_patt, file)
+    } else if(any(grepl(txt_patt, file))){
+        idx <- grep(txt_patt, file)
+    } else{
+        stop("No valid file found")
+    }
+    phenodata <- read.table(file[idx], header = header, sep = sep)
+    return(phenodata)
+}
+#'@export
+metaboImport <- function(filedir, phenodata, injectionvar){
+    if(dir.exists(filedir)){
+        met_files <- list.files(filedir, pattern = "\\.[mM][zZ][xX]?[mM][lL]$",
+                                full.names = TRUE)
+    } else{
+        met_files <- filedir
+    }
+    if(!missing(injectionvar)){
+        if(is.character(injectionvar)){
+            indx <- findOrder(met_files, phenodata, injectionvar)
+        } else{
+            indx <- injectionvar
+        }
+        met_files <- met_files[indx]
+    }
+    mz_dt <- readMSData(files = met_files, mode = "onDisk", pdata = new("NAnnotatedDataFrame", phenodata))
+    return(mz_dt)
 }
 #'@export
 metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,

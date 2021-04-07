@@ -1,0 +1,75 @@
+---
+title: "OmniOmics"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{OmniOmics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r setup}
+library(OmniOmics)
+library(MSnbase)
+library(ggplot2)
+library(plotly)
+library(xcms)
+library(CAMERA)
+library(cliqueMS)
+```
+
+## Metabolomics
+
+### Data loading
+
+```{r}
+
+pheno_dt <- phenoImport("D:/Sacurine/", header = TRUE, sep = "\t")
+samp_names <- sub(pattern = "\\.mzX?ML$", replace = "", basename(files)) 
+pd2 <- pheno_dt[which(pheno_dt$X %in% samp_names),]
+
+str(pheno_dt)
+files <- list.files("D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sacurine/Processed", full.names = TRUE,pattern = "\\.mzX?ML$")
+file_dt2 <- metaboImport(files[-6], phenodata = pd2, injectionvar = "X")
+load(file = "D:/Sacurine/raw_dt.Rda")
+```
+
+### Data visualization
+
+```{r, fig.width=6, fig.height=4}
+ggTicQuality(file_dt,filenum = 1:50, pheno_var = 2, order = TRUE)
+```
+```{r, fig.width=6, fig.height=4}
+ggTicQuality(file_dt,filenum = 1:50, pheno_var = 1, order = TRUE)
+```
+
+```{r}
+ggChromPlot(file_dt2, filenum = 30:35, mz = 179.056, ppm = 20, pheno_var = 1, chromtype = "sum", logscale = TRUE)
+```
+
+
+### Data processing
+
+```{r}
+proc_dt <- metaboProc(object = file_dt2, polarity = "negative", groupvar = 2,
+                    peakwidth = c(10,120), noise = 0, snthresh = 20, ppm = 20,
+                    expandrt = 4, binsize = 0.6, minFraction = 0.4, bw = 30,
+                    annotation = "cliqueMS", cliqsamp = 1)
+```
+
+```{r}
+proc_dt
+```
+
+```{r}
+
+```
+

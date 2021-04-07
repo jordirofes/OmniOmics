@@ -12,7 +12,7 @@
 #'
 #'@export
 # Creates a ggplot2 chromatogram or EIC from an XCMS object
-ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
+ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
                         chromtype = "max", logscale = TRUE, interactive = TRUE){
     if(any(is.null(mz))){
         mz <- c(-Inf, Inf)
@@ -26,6 +26,8 @@ ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
     }
     if(logscale){
         logscale <- "log10"
+    } else{
+        logscale <- NA
     }
     # Colors by sample names
     groups <- sub(object@phenoData@data[,pheno_var][filenum], pattern =
@@ -39,7 +41,7 @@ ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
         mz <- round(mz(chrom_dt[,1]), 4)
     }
     dt <- lapply(seq_along(chrom_dt), function(x){
-        cbind(chrom_dt[[x]]@rtime,chrom_dt[[x]]@intensity)})
+        cbind(chrom_dt[[x]]@rtime, chrom_dt[[x]]@intensity)})
     p <- ggStandardPlot(dt = dt, groups = groups,
                         plottype = "line", ytrans = logscale,
                         ptitle = paste(mz[1], "-", mz[2], "mz",
@@ -53,31 +55,31 @@ ggChromPlot <- function(object, filenum, mz = NA, ppm = NA, pheno_var = 1,
 #'@export
 # Creates a violin/boxplot TIC plot from an XCMS object
 ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
-                        violin, interactive = TRUE, injection_order = TRUE,
-                        pheno_order = 1){
-    if(injection_order){
-        plot_order <- findOrder(object, pheno_order)
-    } else{
-        plot_order <- seq_along(dim(raw_dt[[1]])[1])
-    }
+                        violin = FALSE, interactive = TRUE, order = FALSE){
     # Data preparation
     if(any(is.na(filenum))){
-        filenum <- seq_along(object@phenoData@data[,pheno_var])
+        filenum <- seq_along(fileNames(object))
     }
     if(logscale){
         logscale <- "log10"
+    } else{
+        logscale <- NA
     }
     # Creates de data
     bpdt <- split(tic(filterFile(object, filenum)),
                   f = fromFile(filterFile(object, filenum)))
-    plabs <- sub(pattern = "\\.[mM][zZ]?[xX][mM][lL]$", replacement = "",
-                x =  basename(fileNames(object)))[filenum]
-    groups <- object@phenoData@data[,pheno_var][filenum]
+    if(order){
+        plabs <- seq_along(fileNames(object))
+    } else{
+        plabs <- sub(pattern = "\\.[mM][zZ][xX]?[mM][lL]$", replacement = "",
+                    x =  basename(fileNames(object)))[filenum]
+    }
+    groups <- phenoData(object)@data[[pheno_var]][filenum]
     plottype <- ifelse(violin == TRUE, "violin", "boxplot")
     p <- ggStandardPlot(dt = bpdt, plabs = plabs, groups = groups,
                         plottype = plottype, ytrans = logscale,
                         ptitle = "Total Ion Count plot", xlab = "Sample",
-                        ylab = "Intensity", plotorder = plot_order)
+                        ylab = "Intensity")
     if(interactive){
         return(ggplotly(p))
     }
@@ -86,8 +88,7 @@ ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
 
 ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
                             xtrans = NA, xlab, ylab, angle = 90,
-                            plotorder = dt, origin_lines = FALSE,
-                            smoothing = FALSE){
+                            origin_lines = FALSE, smoothing = FALSE){
     # plabs <- factor(plabs[plotorder], ordered = TRUE)
     # Creates the base plot
     chrom_base <- ggplot() + theme_classic() + xlab(xlab) +
@@ -98,17 +99,15 @@ ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
                                     plot.margin = unit(c(0.5,0.5,0.5,0.5),"cm"),
             plot.title = element_text(hjust = 0.5),
             axis.text.x = element_text(angle = angle, vjust = 0.5, hjust = 1))
-
-
     # Creates a different type of plot for a given list of sample points
     # depending on the given plottype
     if(plottype == "violin"){
-        chrom_plot <- lapply(seq_along(plotorder), function(x){
+        chrom_plot <- lapply(seq_along(dt), function(x){
             geom_violin(aes(x = plabs[x], y = dt[[x]], fill = groups[x]))
         })
     } else if(plottype == "boxplot"){
-        chrom_plot <- lapply(seq_along(plotorder), function(x){
-            geom_boxplot(aes(x = plabs[plotorder[x]], y = dt[[plotorder[x]]],
+        chrom_plot <- lapply(seq_along(dt), function(x){
+            geom_boxplot(aes(x = plabs[x], y = dt[[x]],
                                 fill = groups[x]))
         })
     } else if(plottype == "scatter"){
@@ -116,11 +115,11 @@ ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
                                     color = groups)))
 
     } else if(plottype == "density"){
-        chrom_plot <- lapply(seq_along(plotorder), function(x){
+        chrom_plot <- lapply(seq_along(dt), function(x){
             geom_density(aes(x = dt[[x]], color = groups[x]))
         })
     } else if(plottype == "line"){
-        chrom_plot <- lapply(seq_along(plotorder), function(x){
+        chrom_plot <- lapply(seq_along(dt), function(x){
             geom_line(aes(x = dt[[x]][,1], y = dt[[x]][,2], color = groups[x]))
         })
     } else if(plottype == "column"){
@@ -150,10 +149,17 @@ ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
     }
     return(chrom_base)
 }
-
-findOrder <- function(object, pheno_var){
-    samp <- sub(pattern = "\\.[mM][zZ]?[xX][mM][lL]$", replacement = "",
-                x =  basename(fileNames(object)))
-    ordering <- phenoData(object)@data[[pheno_var]]
+#'@export
+findOrder <- function(files, phenodata, pheno_var){
+    samp <- sub(pattern = "\\.[mM][zZ][xX]?[mM][lL]$", replacement = "",
+                x =  basename(files))
+    if(length(pheno_var) == 1){
+        ordering <- phenodata[[pheno_var]]
+    } else{
+        ordering <- pheno_var
+    }
+    if(!all(samp %in% ordering)){
+        stop("Filenames do not agree with the phenodata variable. Change the names accordingly")
+    }
     return(order(sapply(samp, function(x){ which(ordering == x)})))
 }
