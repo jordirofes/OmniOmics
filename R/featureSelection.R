@@ -103,8 +103,8 @@ groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"
     }
     return(fittables)
 }
-groupFeatureVolcano <- function(comptable, compname = comptable$compname[1],
-                                interactive = TRUE){
+groupFeatureVolcano <- function(comptable, interactive = TRUE){
+    compname <- comptable$compname[1]
     dt <- comptable[,c("logFC", "adj.P.Val")]
     dt$adj.P.Val <- -log10(dt$adj.P.Val)
     dt <- as.list.data.frame(dt)
@@ -120,9 +120,9 @@ groupFeatureVolcano <- function(comptable, compname = comptable$compname[1],
     return(p)
 }
 
-groupFeatureFilter <- function(comptable, pvalthr, logFCthr){
-    comptable %>% mutate(tokeep = logFC >= logFCthr | adj.P.Val <= pvalthr)
-    return(comptable[tokeep,])
+groupFeatureFilter <- function(features, comptable, pvalthr, logFCthr){
+    tokeep <- which(abs(comptable[["logFC"]]) >= logFCthr & comptable[["adj.P.Val"]] <= pvalthr)
+    return(features[tokeep,])
 }
 
 #'@export

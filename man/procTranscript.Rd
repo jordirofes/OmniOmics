@@ -4,7 +4,7 @@
 \alias{procTranscript}
 \title{Processing function for illumina and affymetrix microarrays illumina expression normalization and RMA for affymetrix.}
 \usage{
-procTranscript(object, method)
+procTranscript(object, method, annotationTable)
 }
 \arguments{
 \item{object}{A microarray data in a ExpressionSet or GeneFeatureSet}
