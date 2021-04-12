@@ -72,19 +72,10 @@ setGeneric("multipca", function(object, scale = TRUE){
     standardGeneric("multipca")
 })
 #'@export
-setMethod("multipca", c("ExpressionSet"),
-            function(object, scale = TRUE){
-
-    dt <- exprs(object)
+setMethod("multipca", definition = function(object, scale = TRUE){
+    dt <- extractData(object)
     pcdt <- prcomp(t(dt), scale = scale)
-    return(pcdt)
-})
-#'@export
-setMethod("multipca", c("SummarizedExperiment"),
-            function(object, scale = TRUE){
-    dt <- assay(object)
     dt[which(is.na(dt))] <- 0
-    pcdt <- prcomp(t(dt), scale = scale)
     return(pcdt)
 })
 #'@export
@@ -140,11 +131,11 @@ setGeneric("compPlot", function(features, subset, groupvar, ...){
     standardGeneric("compPlot")
 })
 #'@export
-setMethod("compPlot", "ExpressionSet", function(features, subset, groupvar, pal, ...){
+setMethod("compPlot", definition = function(features, subset, groupvar, pal, ...){
     if(!missing(subset)){
         features <- features[subset,]
     }
-    inte <- exprs(features)
+    inte <- extractData(features)
     gr <- pData(features)[[groupvar]]
     feat_dt <- lapply(rownames(inte), function(x){
         data.frame(intensity = inte[x,], group = gr)

@@ -1,12 +1,17 @@
 #'@title Microarray intensity distribution boxplot/violin plot
 #'@author Jordi Rofes Herrera
-#'@description Creates a boxplot/violin plot from a microarray object with `exprs()` such as an ExpressionSet
+#'@description Creates a boxplot/violin plot from a microarray object with
+#'  `exprs()` such as an ExpressionSet
 #'@param object A microarray data in a ExpressionSet or GeneFeatureSet
 #'@param violin A boolean indicating if the plot will be a violin plot/boxplot
-#'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
-#'@param interactive A boolean indicating if the plot will be converted to an interactive `ggplotly()`
-#'@param nsamp The number of samples used in the plotting to reduce computation time
-#'@param ytrans A transformation applied to the represented intensities, usually log2 for microarray analysis
+#'@param groupvar A numeric indicating the column to use as grouping factor or a
+#'  character indicating it's name
+#'@param interactive A boolean indicating if the plot will be converted to an
+#'  interactive `ggplotly()`
+#'@param nsamp The number of samples used in the plotting to reduce computation
+#'  time
+#'@param ytrans A transformation applied to the represented intensities, usually
+#'  log2 for microarray analysis
 #'@return Returns a ggplot object or a ggplotly
 #'@examples
 #'plot_crayons()
@@ -29,12 +34,17 @@ ggExprDistrPlot <- function(object, violin, groupvar, interactive,
 }
 #'@title Microarray intensity density plot
 #'@author Jordi Rofes Herrera
-#'@description Creates a density distribution plot from a microarray object with `exprs()` such as an ExpressionSet
+#'@description Creates a density distribution plot from a microarray object with
+#'  `exprs()` such as an ExpressionSet
 #'@param object A microarray data in a ExpressionSet or GeneFeatureSet
-#'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
-#'@param interactive A boolean indicating if the plot will be converted to an interactive `ggplotly()`
-#'@param nsamp The number of samples used in the plotting to reduce computation time
-#'@param xtrans A transformation applied to the represented intensities, usually log2 for microarray analysis
+#'@param groupvar A numeric indicating the column to use as grouping factor or a
+#'  character indicating it's name
+#'@param interactive A boolean indicating if the plot will be converted to an
+#'  interactive `ggplotly()`
+#'@param nsamp The number of samples used in the plotting to reduce computation
+#'  time
+#'@param xtrans A transformation applied to the represented intensities, usually
+#'  log2 for microarray analysis
 #'@return Returns a ggplot object or a ggplotly
 #'@examples
 #'plot_crayons()
@@ -57,12 +67,17 @@ ggDensityPlot <- function(object, groupvar, interactive, nsamp = 10000,
 }
 #'@title Microarray sample PCA plot
 #'@author Jordi Rofes Herrera
-#'@description Creates a PCA plot from a microarray object with `exprs()` such as an ExpressionSet
+#'@description Creates a PCA plot from a microarray object with `exprs()` such
+#'  as an ExpressionSet
 #'@param object Microarray data from a ExpressionSet or GeneFeatureSet
-#'@param pc A vector of length two indicanting the principal components to plot on each axis
-#'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
-#'@param interactive A boolean indicating if the plot will be converted to an interactive `ggplotly()`
-#'@param scale A boolan indicating if the PCA will be scaled, (the default is TRUE).
+#'@param pc A vector of length two indicanting the principal components to plot
+#'  on each axis
+#'@param groupvar A numeric indicating the column to use as grouping factor or a
+#'  character indicating it's name
+#'@param interactive A boolean indicating if the plot will be converted to an
+#'  interactive `ggplotly()`
+#'@param scale A boolan indicating if the PCA will be scaled, (the default is
+#'  TRUE).
 #'@return Returns a ggplot object or a ggplotly
 #'@examples
 #'plot_crayons()
@@ -75,14 +90,20 @@ ggPCAplot <- function(object, pc = c(1,2), groupvar,
 }
 #'@title Wrapper function for .idat, .cel and geoDatasets importing
 #'@author Jordi Rofes Herrera
-#'@description Imports .idat, .cel files from microarray expression data into their respective formats and the download of geoDatasets.
-#'To import illumina datasets it is required the appropiate annotation package
-#'@param datapath A string with the directory where the files are located or a vector with all the files to import
-#'@param phenodata A string indicating the phenodata location as a comma separated values or excel file.
+#'@description Imports .idat, .cel files from microarray expression data into
+#'  their respective formats and the download of geoDatasets. To import illumina
+#'  datasets it is required the appropiate annotation package
+#'@param datapath A string with the directory where the files are located or a
+#'  vector with all the files to import
+#'@param phenodata A string indicating the phenodata location as a comma
+#'  separated values or excel file.
 #'@param geoid A string indicating a geoDataset accesion entry
-#'@param header A boolean indicating if the phenodata has a header with the variable names
-#'@param sep A string indicating the separator of the phenodata file, if it's a .csv file, usually a space or a comma.
-#'@param groupvar A numeric indicating the column to use as grouping factor or a character indicating it's name
+#'@param header A boolean indicating if the phenodata has a header with the
+#'  variable names
+#'@param sep A string indicating the separator of the phenodata file, if it's a
+#'  .csv file, usually a space or a comma.
+#'@param groupvar A numeric indicating the column to use as grouping factor or a
+#'  character indicating it's name
 #'@return Returns an object with the expression data.
 #'@examples
 #'plot_crayons()
@@ -141,13 +162,16 @@ list.idatfiles <- function(...){
     return(dt_files[grepl("\\.[iI][dD][aA][tT]$", dt_files)])
 }
 
-#'@title Processing function for illumina and affymetrix microarrays illumina expression normalization and RMA for affymetrix.
+#'@title Processing function for illumina and affymetrix microarrays illumina
+#'  expression normalization and RMA for affymetrix.
 #'@author Jordi Rofes Herrera
-#'@description Normalizes a GeneFeatureSet using the RMA method or an ExpressionSetIllumina using the selected methodology
+#'@description Normalizes a GeneFeatureSet using the RMA method or an
+#'  ExpressionSetIllumina using the selected methodology
 #'@param object A microarray data in a ExpressionSet or GeneFeatureSet
 #'@param method String specifying the illumina normalization method methods are:
-#'"quantile", "qspline", "vsn", "rankInvariant", "median" and "none".
-#'@return Returns a processed ExpressionSetIllumina for illumina data or an ExpressionSet
+#'  "quantile", "qspline", "vsn", "rankInvariant", "median" and "none".
+#'@return Returns a processed ExpressionSetIllumina for illumina data or an
+#'  ExpressionSet
 #'@examples
 #'plot_crayons()
 #'@export

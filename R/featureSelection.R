@@ -4,23 +4,15 @@ setGeneric("featureVarPlot", function(features, varfun, interactive = TRUE){
     standardGeneric("featureVarPlot")
 })
 #'@export
-setMethod("featureVarPlot", "ExpressionSet",
-            function(features, varfun, interactive){
-    feat_sd <- sort(apply(exprs(features), 1, varfun))
+setMethod("featureVarPlot", definition =  function(features, varfun, interactive){
+    feat_dt <- extractData(features)
+    feat_sd <- sort(apply(feat_dt, 1, varfun))
     feat_index <- 1:nrow(features)
     p <- varPlot(feat_index = feat_index, feat_sd = feat_sd,
                     interactive = interactive)
     return(p)
 })
 #'@export
-setMethod("featureVarPlot", "SummarizedExperiment",
-            function(features, varfun, interactive){
-    feat_sd <- sort(apply(assay(features), 1, varfun))
-    feat_index <- 1:nrow(features)
-    p <- varPlot(feat_index = feat_index, feat_sd = feat_sd,
-                    interactive = interactive)
-    return(p)
-})
 varPlot <- function(feat_index, feat_sd, interactive = TRUE){
     p <- ggStandardPlot(dt = list(feat_index, feat_sd), plottype = "scatter",
                     ptitle = "Distribution of feature variability",
@@ -141,4 +133,28 @@ featureSelection <- function(biosigndata, model = 1, scoremin = "A", minmod){
         mutate(highscore = plsda >= scoremin | randomforest >= scoremin | svm >= scoremin)
     return(biosigndata@eset[scores$highscore,])
 }
+#'@export
+setGeneric("extractData", function(dt){
+    standardGeneric("extractData")
+})
+#'@export
+setMethod("extractData", "ExpressionSet", function(dt){
+    return(exprs(dt))
+})
+#'@export
+setMethod("extractData", "SummarizedExperiment", function(dt){
+    return(assay(dt))
+})
 
+#'@export
+setGeneric("extractPhenoData", function(dt){
+    standardGeneric("extractPhenoData")
+})
+#'@export
+setMethod("extractPhenoData", "ExpressionSet", function(dt){
+    return(pData(dt))
+})
+#'@export
+setMethod("extractPhenoData", "SummarizedExperiment", function(dt){
+    return(phenoData(dt))
+})
