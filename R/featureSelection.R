@@ -34,42 +34,109 @@ geneFeatureFilter <- function(features, entrez, rem.dupEntrez, varfilt, varcutof
 }
 # Metabolomic basic feature filtering
 #'@export
-metabFeatureFilter <- function(features, phenovar, blank.int.ratio,
-                            blank.int.ratio.thr = 2, blancname = "blank",
-                            samplename = "sample", varfilter, varfun, varthr,
-                            varquant, intensity_thr, ism0, hasan){
-    feat_dt <- assay(features)
-    feature_info <- data.frame()
-    if(!missing(blank.int.ratio)){
-        feature_info$blanc_int <- apply(feat_dt, 1, function(x){
-            b <- mean(x[colData(features)[[phenovar]] == samplename])
-            s <- mean(x[colData(features)[[phenovar]] == blankname])
-            s/b > blank.int.ratio.thr
-        })
+metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
+                            blankFoldChange = 2, blankname = "blank",
+                            samplename, cvqcfilt = FALSE,
+                            cvqc_thr = 30, qcname = "QC", nafilter = FALSE,
+                            naratioThr, naratioMethod, varfilter = FALSE,
+                            varfun, varthr, varquant, intensitythr,
+                            ism0 = FALSE, hasan = FALSE, sampfilter = FALSE,
+                            maxmv, filtername, ...){
+    dt_groups <- extractPhenoData(features)[[groupvar]]
+    if(blankfilt){
+        features <- filter_peaks_by_blank(features, blankFoldChange, dt_groups,
+                                        blankname, qcname, remove_peaks = TRUE,
+                                        remove_samples = TRUE)
+        dt_groups <- extractPhenoData(features)[[groupvar]]
     }
-    if(!missing(intensity_thr)){
-        feature_info$intensity <- apply(feat_dt, 1,
-                                        function(x){any(x >= thint)})
+    if(!missing(intensitythr)){
+        features <- intFilter(features, intensitythr)
+    }
+    if(cvqcfilt){
+        features <- filter_peaks_by_rsd(features, classes = dt_groups,
+                                        max_rsd = cvqc_thr, qc_label = qcname,
+                                        remove_peaks = TRUE)
+    }
+    if(nafilter){
+        features <- filter_peaks_by_fraction(features, min_frac = naratioThr,
+                                            dt_groups, method = naratioMethod,
+                                            qc_label = qcname,
+                                            remove_peaks = TRUE)
     }
     if(varfilter){
-        feature_info$varfilt <- apply(feat_dt[,colData(features)[[phenovar]] == samplename], 1, varfun)
+        features <- varfunFilter(features, varfun, varquant, varthr, dt_groups,
+                                samplename)
+    }
+    if(ism0){
+        features <- ismoFilter(features)
+    }
+    if(hasan){
+        features <- anotFilter(features)
+    }
+    if(sampfilter){
+        features <- sampleFilter(features, groupvar = dt_groups,
+                                groupname = filtername, maxmv = maxmv)
+    }
+    return(features)
+}
+#' #'@export
+#' blankFilter <- function(features, groupvar, samplename, blankname){
+#'     feat_dt <- extractData(features)
+#'     blank_int <- apply(feat_dt, 1, function(x){
+#'             s <- mean(x[colData(feat_dt)[[groupvar]] == samplename], na.rm = TRUE)
+#'             b <- mean(x[colData(feat_dt)[[groupvar]] == blankname], na.rm = TRUE)
+#'             if(is.nan(b)){b <- 0}
+#'             s/b > blank.int.ratio.thr
+#'         })
+#'     return(features[blank_int,])
+#' }
+#' #'@export
+#' cvFilterQC <- function(features, groupvar, samplename, qcname, qctimes = 2){
+#'     feat_dt <- extractData(features)
+#'     cv_samp_qc <- apply(feat_dt, 1, function(x){
+#'             samp_indx <- colData(feat_dt)[[groupvar]] == samplename
+#'             qc_indx <- colData(feat_dt)[[groupvar]] == qcname
+#'             s <- sd(x[samp_indx], na.rm = TRUE)/mean(x[samp_indx], na.rm = TRUE)
+#'             qc <- sd(x[qc_indx], na.rm = TRUE)/mean(x[qc_indx], na.rm = TRUE)
+#'             s > (qctimes*qc)
+#'         })
+#'     return(features[cv_samp_qc,])
+#' }
+#'@export
+varfunFilter <- function(features, varfun, varquant, varthr, groupvar, samplename){
+        feat_dt <- extractData(features)
+        if(!missing(samplename)){
+            feat_dt <- feat_dt[,groupvar == samplename]
+        }
+        varfilt <- apply(feat_dt, 1, varfun)
         if(varquant){
-            thr <- sort(feature_info$varfilt)[round(length(feature_info$varfilt) * varthr)]
+            thr <- sort(varfilt)[round(length(varfilt) * varthr)]
         } else{
             thr <- varthr
         }
-        feature_info$varfilt <- feature_info$varfilt >= thr
-    }
-    if(ism0){
-        feature_info$ism0 <- grepl("M0", rowData(features)$isotope)
-    }
-    if(hasan){
-        feature_info$hasan <- !is.na(rowData(features)$annotation)
-    }
-    filt_indx <- apply(feature_info, 1, function(x){all(x)})
-    return(features[filt_indx,])
+        varfilt <- varfilt >= thr
+        return(features[varfilt,])
+}
+#'@export
+anotFilter <- function(features){
+    feat_dt <- extractData(features)
+    hasan <- !is.na(rowData(feat_dt)$annotation)
+    return(features[hasan,])
+}
+#'@export
+ismoFilter <- function(features){
+    feat_dt <- extractData(features)
+    ism0 <- grepl("M0", rowData(feat_dt)$isotope)
+    return(features[ism0,])
+}
+#'@export
+intFilter <- function(features, intthr){
+    feat_dt <- extractData(features)
+    intensity <- apply(feat_dt, 1, function(x){any(x >= intthr)})
+    features[intensity,]
 }
 
+#'@export
 # Limma gene filtering
 model.mat <- function(features, phenovar){
     modmat <- model.matrix(~ 0 + pData(features)[[phenovar]])
@@ -78,7 +145,7 @@ model.mat <- function(features, phenovar){
                             fixed = TRUE)
     return(modmat)
 }
-
+#'@export
 groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"){
     fitmod <- lmFit(features, modelMatrix)
     fitdt <- contrasts.fit(fitmod, contrastMat)
@@ -95,43 +162,101 @@ groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"
     }
     return(fittables)
 }
-groupFeatureVolcano <- function(comptable, interactive = TRUE){
+#'@export
+setGeneric("annotateData", function(features, tableList, anotpackage){
+    standardGeneric("annotateData")
+})
+#'@export
+setMethod("annotateData", c("ANY", "list"), function(features, tableList, anotpackage){
+    annotated_tables <- lapply(seq_along(tableList), function(x){
+        annot <- annotateTable(tableList[[x]], anotpackage)
+        rownames(tableList[[x]]) <- annot$SYMBOL
+        cbind(tableList[[x]], annot)
+    })
+    return(annotated_tables)
+})
+#'@export
+setMethod("annotateData", "ExpressionSet", function(features, tableList, anotpackage){
+    annotation <- annotateTable(features, anotpackage)
+    rownames(features) <- annotation$SYMBOL
+    return(features)
+})
+#'@export
+annotateTable <- function(feat_dt, anotpackage){
+    genes <- rownames(feat_dt)
+    packData <- eval(parse(text = anotpackage))
+    genes_anotat <- select(packData, genes, c("SYMBOL", "ENTREZID", "GENENAME"))
+    return(genes_anotat)
+
+}
+#'@export
+groupFeatureVolcano <- function(comptable, adj.pvalue = TRUE, interactive = TRUE, jitterseed = 123){
     compname <- comptable$compname[1]
-    dt <- comptable[,c("logFC", "adj.P.Val")]
-    dt$adj.P.Val <- -log10(dt$adj.P.Val)
+
+    if(adj.pvalue){
+        dt <- comptable[,c("logFC", "adj.P.Val")]
+        dt_thr <- dt$adj.P.Val <= 0.05 & abs(dt$logFC) > 1
+        groups <- ifelse(dt_thr, "royalblue4", "grey40")
+        dt$adj.P.Val <- -log10(dt$adj.P.Val)
+    } else{
+        dt <- comptable[,c("logFC", "p.value")]
+        dt_thr <- dt$p.value <= 0.05 & abs(dt$logFC) > 1
+        groups <- ifelse(dt_thr, "royalblue4", "grey40")
+        dt$p.value <- -log10(dt$p.value)
+    }
     dt <- as.list.data.frame(dt)
     p <- ggStandardPlot(dt = dt, groups = NULL, plottype = "scatter",
                         ptitle = paste("Volcano plot for:", compname),
                         xlab = "Fold-Change (Log2)", ylab = "p-values (-log10)",
                         angle = 0) +
-        geom_vline(xintercept = -1) + geom_vline(xintercept = 1) +
-        geom_hline(yintercept = -log10(0.05))
+        geom_vline(xintercept = -1, color = "lightgrey") + geom_vline(xintercept = 1, color = "lightgrey") +
+        geom_hline(yintercept = -log10(0.05),color = "lightgrey") +
+        ggplot2::annotate(geom = "point",x = dt[[1]], y = dt[[2]], colour = groups) +
+        geom_text(aes(x = dt[[1]][dt_thr], y = dt[[2]][dt_thr], label = dt_labs[dt_thr]),
+                  position = position_jitter(width = 0.1, height = 0.1, seed = jitterseed))
     if(interactive){
         return(ggplotly(p))
     }
     return(p)
 }
-
-groupFeatureFilter <- function(features, comptable, pvalthr, logFCthr){
-    tokeep <- which(abs(comptable[["logFC"]]) >= logFCthr & comptable[["adj.P.Val"]] <= pvalthr)
+#'@export
+groupFeatureFilter <- function(features, comptable, pvalthr = 0.05, logFCthr = 1, padjusted){
+    if(padjusted){
+        tokeep <- which(abs(comptable[["logFC"]]) >= logFCthr & comptable[["adj.P.Val"]] <= pvalthr)
+    } else{
+        tokeep <- which(abs(comptable[["logFC"]]) >= logFCthr & comptable[["P.Value"]] <= pvalthr)
+    }
     return(features[tokeep,])
+}
+#'@export
+sampleFilter <- function(features, groupvar, groupname, maxmv){
+    if(!missing(maxmv)){
+        features <- filter_samples_by_mv(features, max_perc_mv = maxmv, classes = groupvar, remove_samples = TRUE)
+    }
+    if(!missing(groupname)){
+        features <- features[,groupvar != groupname]
+    }
+    return(features)
 }
 
 #'@export
 # Machine learning feature selection
-featureSign <- function(features, phenoVar, boot){
-    mod <- biosigner::biosign(features, phenoVar)
+featureSign <- function(features, groupvar, boot){
+    feat_dt <- t(extractData(features))
+    groupvar <- extractPhenoData(features)[[groupvar]]
+    mod <- biosigner::biosign(x = feat_dt, y = groupvar)
     return(mod)
 }
+
 #'@export
-featureSelection <- function(biosigndata, model = 1, scoremin = "A", minmod){
+featureSelection <- function(features, biosigndata, model = 1, scoremin = "A"){
     lev <- c("E", "B", "A", "S")
     scores <- as.data.frame(biosigndata@tierMC) %>%
         mutate(plsda = factor(plsda, levels = lev, ordered = TRUE)) %>%
         mutate(randomforest = factor(randomforest, levels = lev, ordered = TRUE)) %>%
-        mutate(svm = factor(svm, levels = lev, ordered = TRUE)) %>%
-        mutate(highscore = plsda >= scoremin | randomforest >= scoremin | svm >= scoremin)
-    return(biosigndata@eset[scores$highscore,])
+        mutate(svm = factor(svm, levels = lev, ordered = TRUE))
+    highscore <- apply(as.data.frame(scores[,model]) >= scoremin, 1, any)
+    return(features[highscore,])
 }
 #'@export
 setGeneric("extractData", function(dt){
@@ -142,10 +267,13 @@ setMethod("extractData", "ExpressionSet", function(dt){
     return(exprs(dt))
 })
 #'@export
+setMethod("extractData", "GeneFeatureSet", function(dt){
+    return(exprs(dt))
+})
+#'@export
 setMethod("extractData", "SummarizedExperiment", function(dt){
     return(assay(dt))
 })
-
 #'@export
 setGeneric("extractPhenoData", function(dt){
     standardGeneric("extractPhenoData")
@@ -155,6 +283,10 @@ setMethod("extractPhenoData", "ExpressionSet", function(dt){
     return(pData(dt))
 })
 #'@export
+setMethod("extractPhenoData", "GeneFeatureSet", function(dt){
+    return(pData(dt))
+})
+#'@export
 setMethod("extractPhenoData", "SummarizedExperiment", function(dt){
-    return(phenoData(dt))
+    return(colData(dt))
 })

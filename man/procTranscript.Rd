@@ -2,7 +2,8 @@
 % Please edit documentation in R/transcrProc.R
 \name{procTranscript}
 \alias{procTranscript}
-\title{Processing function for illumina and affymetrix microarrays illumina expression normalization and RMA for affymetrix.}
+\title{Processing function for illumina and affymetrix microarrays illumina
+ expression normalization and RMA for affymetrix.}
 \usage{
 procTranscript(object, method, annotationTable)
 }
@@ -13,10 +14,12 @@ procTranscript(object, method, annotationTable)
 "quantile", "qspline", "vsn", "rankInvariant", "median" and "none".}
 }
 \value{
-Returns a processed ExpressionSetIllumina for illumina data or an ExpressionSet
+Returns a processed ExpressionSetIllumina for illumina data or an
+ ExpressionSet
 }
 \description{
-Normalizes a GeneFeatureSet using the RMA method or an ExpressionSetIllumina using the selected methodology
+Normalizes a GeneFeatureSet using the RMA method or an
+ ExpressionSetIllumina using the selected methodology
 }
 \examples{
 plot_crayons()

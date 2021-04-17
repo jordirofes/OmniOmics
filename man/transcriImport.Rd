@@ -7,24 +7,30 @@
 transcriImport(datapath, phenodata, geoid, header = TRUE, sep = ",")
 }
 \arguments{
-\item{datapath}{A string with the directory where the files are located or a vector with all the files to import}
+\item{datapath}{A string with the directory where the files are located or a
+vector with all the files to import}
 
-\item{phenodata}{A string indicating the phenodata location as a comma separated values or excel file.}
+\item{phenodata}{A string indicating the phenodata location as a comma
+separated values or excel file.}
 
 \item{geoid}{A string indicating a geoDataset accesion entry}
 
-\item{header}{A boolean indicating if the phenodata has a header with the variable names}
+\item{header}{A boolean indicating if the phenodata has a header with the
+variable names}
 
-\item{sep}{A string indicating the separator of the phenodata file, if it's a .csv file, usually a space or a comma.}
+\item{sep}{A string indicating the separator of the phenodata file, if it's a
+.csv file, usually a space or a comma.}
 
-\item{groupvar}{A numeric indicating the column to use as grouping factor or a character indicating it's name}
+\item{groupvar}{A numeric indicating the column to use as grouping factor or a
+character indicating it's name}
 }
 \value{
 Returns an object with the expression data.
 }
 \description{
-Imports .idat, .cel files from microarray expression data into their respective formats and the download of geoDatasets.
-To import illumina datasets it is required the appropiate annotation package
+Imports .idat, .cel files from microarray expression data into
+ their respective formats and the download of geoDatasets. To import illumina
+ datasets it is required the appropiate annotation package
 }
 \examples{
 plot_crayons()

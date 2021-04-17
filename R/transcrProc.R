@@ -16,8 +16,11 @@
 #'@examples
 #'plot_crayons()
 #'@export
-ggExprDistrPlot <- function(object, violin, groupvar, interactive,
+ggExprDistrPlot <- function(object, violin = TRUE, groupvar, interactive = TRUE,
                             nsamp = 100000, ytrans = "log2"){
+    if(nrow(object) < nsamp){
+        nsamp <- nrow(object)
+    }
     dt <- exprs(object)[sample(x = seq_len(nrow(exprs(object))),size = nsamp),]
     dt <- as.list.data.frame(as.data.frame(dt))
     plabs <- names(dt)
@@ -49,13 +52,15 @@ ggExprDistrPlot <- function(object, violin, groupvar, interactive,
 #'@examples
 #'plot_crayons()
 #'@export
-ggDensityPlot <- function(object, groupvar, interactive, nsamp = 10000,
+ggDensityPlot <- function(object, groupvar, interactive = TRUE, nsamp = 10000,
                           ytrans = NA, xtrans = "log2"){
+    if(nrow(object) < nsamp){
+        nsamp <- nrow(object)
+    }
     dt <- exprs(object)[sample(x = seq_len(nrow(exprs(object))),size = nsamp),]
     dt <- as.list.data.frame(as.data.frame(dt))
     plabs <- names(dt)
     groups <- phenoData(object)[[groupvar]]
-    browser()
     p <- ggStandardPlot(dt = dt, plabs = plabs, groups = groups,
                    plottype = "density", ytrans = ytrans, xtrans = xtrans,
                    ptitle = "Expression density distribution", ylab = "Density",
@@ -84,7 +89,7 @@ ggDensityPlot <- function(object, groupvar, interactive, nsamp = 10000,
 #'@export
 ggPCAplot <- function(object, pc = c(1,2), groupvar,
                         scale = TRUE, interactive = TRUE){
-    pcdt <- multipca(object, scale)
+    pcdt <- multipca(features = object, scale =  scale)
     p <- pcaPlot(pcdt, object, pc, groupvar, interactive)
     return(p)
 }
@@ -131,15 +136,16 @@ transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ",")
     if(dir.exists(datapath)){
         if(length(list.celfiles(datapath)) != 0){
             if(missing(phenodata)){
-                files <- list.files(datapath)
-                if(grepl("\\.[cC][sS][vV]$", files)){
+                files <- list.files(datapath, full.names = TRUE)
+                if(any(grepl("\\.[cC][sS][vV]$", files))){
                     phenodata <- read.csv(files[grepl("\\.[cC][sS][vV]$",
                                                         files)],
                                             header = header, sep = sep)
-                } else if(grepl("\\.[xX][lL][sS][xX]?$", files)){
+                } else if(any(grepl("\\.[xX][lL][sS][xX]?$", files))){
                     phenodata <- read_excel(
                         files[grepl("\\.[xX][lL][sS][xX]?$")])
                 }
+                phenodata <- AnnotatedDataFrame(data = phenodata)
             }
             return(read.celfiles(list.celfiles(datapath, full.names = TRUE),
                                 phenoData = phenodata))

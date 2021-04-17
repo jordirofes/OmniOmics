@@ -7,7 +7,7 @@
 ggDensityPlot(
   object,
   groupvar,
-  interactive,
+  interactive = TRUE,
   nsamp = 10000,
   ytrans = NA,
   xtrans = "log2"
@@ -16,19 +16,24 @@ ggDensityPlot(
 \arguments{
 \item{object}{A microarray data in a ExpressionSet or GeneFeatureSet}
 
-\item{groupvar}{A numeric indicating the column to use as grouping factor or a character indicating it's name}
+\item{groupvar}{A numeric indicating the column to use as grouping factor or a
+character indicating it's name}
 
-\item{interactive}{A boolean indicating if the plot will be converted to an interactive `ggplotly()`}
+\item{interactive}{A boolean indicating if the plot will be converted to an
+interactive `ggplotly()`}
 
-\item{nsamp}{The number of samples used in the plotting to reduce computation time}
+\item{nsamp}{The number of samples used in the plotting to reduce computation
+time}
 
-\item{xtrans}{A transformation applied to the represented intensities, usually log2 for microarray analysis}
+\item{xtrans}{A transformation applied to the represented intensities, usually
+log2 for microarray analysis}
 }
 \value{
 Returns a ggplot object or a ggplotly
 }
 \description{
-Creates a density distribution plot from a microarray object with `exprs()` such as an ExpressionSet
+Creates a density distribution plot from a microarray object with
+ `exprs()` such as an ExpressionSet
 }
 \examples{
 plot_crayons()

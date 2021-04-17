@@ -1,23 +1,34 @@
-featurebatchQc <- function(features, groups, injectionorder, qcname,
-                            logscale = NA, interactive = TRUE){
+#'@export
+featurebatchQc <- function(features, groupvar, injectionvar, qcname,
+                            logscale = FALSE, interactive = TRUE){
     ydt <- apply(assay(features), 2, function(x){
         sum(x, na.rm = TRUE)
     })
-    dt <- list(colData(features)[[injectionorder]], ydt)
-    p <- ggStandardPlot(dt = dt, groups = colData(features)[[groups]],
+    if(!missing(injectionvar)){
+        xdt <- colData(features)[[injectionorder]]
+    } else{
+        xdt <- seq_len(ncol(features))
+    }
+    if(logscale){
+        logscale <- "log10"
+    } else{
+        logscale <- NA
+    }
+    dt <- list(xdt, ydt)
+    p <- ggStandardPlot(dt = dt, groups = colData(features)[[groupvar]],
                     plottype = "scatter",
-                    ptitle = "Feature total sum for each sample",
+                    ptitle = "Total sum of feature intensity for each sample",
                     xlab = "Injection Order", ylab = "Total sum of features",
-                    smoothing = TRUE, ytrans = logscale)
+                    ytrans = logscale)
     if(interactive){
         return(ggplotly(p))
     }
     return(p)
 }
-
+#'@export
 featureBatchPVCA <- function(features, phenovars, threshold){
-    covariates <- pData(rawData)[phenovars]
-    pvcadt <- pvcaBatchAssess(features, phenovars, threshold)
+    covariates <- colnames(pData(features))[phenovars]
+    pvcadt <- pvcaBatchAssess(features, covariates, threshold)
     p <- ggStandardPlot(dt = pvcadt$dat, plabs = factor(pvcadt$label,
                                                         levels =  pvcadt$label,
                                                         ordered = TRUE),
@@ -29,15 +40,25 @@ featureBatchPVCA <- function(features, phenovars, threshold){
                         label = as.character(round(pvcadt$dat, 2))))
     return(p)
 }
-
-batchNormalization <- function(features, norm, injectionorder, batchnum, groups,
-                                qcname, covariate, covariate2){
-    if(norm == "qcnorm"){
+#'@export
+batchNormalization <- function(features, method, injectionorder, batchnum, groups,
+                                qcname, covariate, covariate2 = NULL){
+    if(method == "qcnorm"){
+        if(length(injectionorder) == 1){
+            injectionorder <- colData(features)[[injectionorder]]
+        }
+        batchnum <- colData(features)[[batchnum]]
+        groups <- colData(features)[[groups]]
             return(QCRSC(df = features, order = injectionorder,
-                batch = batchnum, classes = groups, qc_label = qcname))
-    } else if(norm == "covnorm"){
-        return(removeBatchEffect(log10(assay(features)), batch = covariate,
-                            batch2 =  covariate2))
+                batch = batchnum, classes = groups, qc_label = qcname, spar = 0,
+                minQC = 4))
+    } else if(method == "covnorm"){
+        feature_dt <- extractData(features)
+        covariate <- extractPhenoData(features)[[covariate]]
+        batch_dt <- removeBatchEffect(feature_dt, batch = covariate,
+                            batch2 = covariate2)
+        exprs(features) <- batch_dt
+        return(features)
     } else{
         stop("Enter a valid normalization method")
     }

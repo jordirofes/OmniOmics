@@ -106,8 +106,11 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
                                   getPeaklistanClique(clic_an))
             annot <- lapply(featureDefinitions(peakDt)$peakidx, function(x){
                 l <- lapply(x, function(y){
-                    if(!is.na(joint_cp[y, 13])){
-                        return(joint_cp[y, 13:28])
+                    if(!is.na(joint_cp[y, "isotope"])){
+                        if(!all(is.na(joint_cp[y, c("mass1", "mass2",
+                                                    "mass3", "mass4")]))){
+                            return(joint_cp[y, 14:28])
+                        }
                     }
                 })
                 if(all(is.na(l))){
@@ -116,6 +119,19 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
                     return(l)
                 }
             })
+            isot <- lapply(featureDefinitions(peakDt)$peakidx, function(x){
+                l <- lapply(x, function(y){
+                    if(!is.na(joint_cp[y, "isotope"])){
+                        return(joint_cp[y, "isotope"])
+                    }
+                })
+                if(all(is.na(l))){
+                    return(NA)
+                } else{
+                    return(l)
+                }
+            })
+            featureDefinitions(peakDt)$isotope <- isot
             featureDefinitions(peakDt)$annotation <- annot
         }
         feat_list <- quantify(peakDt)

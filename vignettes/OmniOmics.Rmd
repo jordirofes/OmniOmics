@@ -24,6 +24,8 @@ library(plotly)
 library(xcms)
 library(CAMERA)
 library(cliqueMS)
+library(SummarizedExperiment)
+library(pmp)
 ```
 
 ## Metabolomics
@@ -33,43 +35,280 @@ library(cliqueMS)
 ```{r}
 
 pheno_dt <- phenoImport("D:/Sacurine/", header = TRUE, sep = "\t")
+# We work with a reduced dataset to speed the computations
+files <- list.files("D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sacurine/Processed", full.names = TRUE,pattern = "\\.mzX?ML$")
 samp_names <- sub(pattern = "\\.mzX?ML$", replace = "", basename(files)) 
 pd2 <- pheno_dt[which(pheno_dt$X %in% samp_names),]
-
 str(pheno_dt)
-files <- list.files("D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sacurine/Processed", full.names = TRUE,pattern = "\\.mzX?ML$")
 file_dt2 <- metaboImport(files[-6], phenodata = pd2, injectionvar = "X")
-load(file = "D:/Sacurine/raw_dt.Rda")
 ```
 
 ### Data visualization
 
+We can visualize total ion count plots for each sample ordered by injection time:
+
 ```{r, fig.width=6, fig.height=4}
 ggTicQuality(file_dt,filenum = 1:50, pheno_var = 2, order = TRUE)
 ```
+
+Or filter it for a specific phenodata variable and visualize only quality control samples:
+
 ```{r, fig.width=6, fig.height=4}
-ggTicQuality(file_dt,filenum = 1:50, pheno_var = 1, order = TRUE)
+ggTicQuality(file_dt, pheno_var = 2, pheno_filter = "pool", order = TRUE)
 ```
 
+In this case we can observe a reduction in the TIC of quality control samples indicating a possible need to correct for batch effect.
+
+Chromatograms and extracted ion chromatogram (EIC) may be visualized using the `ggChromPlot()` function, if mz is not specified a chromatogram will be plot if it is specified then a EIC will be plot.
 ```{r}
 ggChromPlot(file_dt2, filenum = 30:35, mz = 179.056, ppm = 20, pheno_var = 1, chromtype = "sum", logscale = TRUE)
 ```
 
-
 ### Data processing
 
+After visualizing the data we use XCMS to detect chromatographic peaks, group features between samples and annotate pekas. All this can be done using the `metaboProc()` function.
 ```{r}
 proc_dt <- metaboProc(object = file_dt2, polarity = "negative", groupvar = 2,
                     peakwidth = c(10,120), noise = 0, snthresh = 20, ppm = 20,
                     expandrt = 4, binsize = 0.6, minFraction = 0.4, bw = 30,
                     annotation = "cliqueMS", cliqsamp = 1)
+proc_dt <- readRDS(file = "D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sacurine/Processed/proc_dt.rds")
 ```
+
+This function outputs a list with two or three items depending if an annotation step was done. The first is the XCMSexp object, the second is the annotation object (cliqueAn or camera) and the last one is the SummarizedExperiment with feature information. We may see information for each one:
 
 ```{r}
 proc_dt
 ```
+### Batch correction
+
+To correct for batch effect with QC, we use the batchNormalization() function with the qcnorm method. This function uses the QCRS() function from pmp package to normalize for within and between batch signal drift using a smoothed spline fitting.
+
+Before batch correction we may apply a blank subtraction step and eliminate features with high intensity in the blank from the feature data.
 
 ```{r}
+feature_blank_na_rds <- metabFeatureFilter(proc_dt[[3]], groupvar = 2, 
+                                    blankfilt = TRUE, nafilter = TRUE, 
+                                    blankFoldChange = 2, blankname = "blank",
+                                    naratioThr = 0.9, naratioMethod = "QC", 
+                                    cvqcfilt = TRUE, cvqc_thr = 40, 
+                                    qcname = "pool", sampfilter = TRUE, 
+                                    maxmv = 0.4)
+nrow(proc_dt[[3]]) - nrow(feature_blank_na_rds)
+ncol(proc_dt[[3]]) - ncol(feature_blank_na_rds)
+```
 
+We eliminated `r nrow(proc_dt[[3]]) - nrow(feature_noblank_na_rsd)` features
+
+```{r}
+library(pmp)
+feature_batch <- batchNormalization(features = feature_blank_na_rds, 
+                                    method = "qcnorm", injectionorder = 1:28, 
+                                    groups = 2, qcname = "pool", batchnum = 4)
+
+feature_batch <- metabFeatureFilter(feature_batch, groupvar = 2, nafilter = TRUE, 
+                                    naratioThr = 0.3, naratioMethod = "across")
+```
+
+We can observe the effects of the normalization using the featurebatchQc() and the PCA functions:
+
+```{r}
+# Feature sum of intensities plot
+featurebatchQc(feature_blank_na_rds, groupvar = 2, qcname = "pool", logscale = F)
+featurebatchQc(feature_batch, groupvar = 2, qcname = "pool", logscale = F)
+```
+
+```{r}
+# PCA pre-processing and plotting
+# pqn normalization, multivariate imputation and generalized logarithm are applied prior to pca plotting
+feature_noblank_proc <- prePro(feature_blank_na_rds, prefuns = c("pqn", "mvImp", "glog"), method = "knn", groupvar = 2, qcname = "pool")
+feature_batch_proc <- prePro(feature_batch, prefuns = c("pqn", "mvImp", "glog"), method = "knn", groupvar = 2, qcname = "pool")
+
+raw_pca <- multipca(feature_noblank_proc, scale = FALSE)
+norm_pca <- multipca(feature_batch_proc, scale = FALSE)
+
+pcaPlot(pcdt = raw_pca, feature_noblank_proc, groupvar = 2)
+pcaPlot(pcdt = norm_pca, feature_batch_proc, groupvar = 2)
+```
+
+Using the pmp function sbc_plot we may visualize each feature and see how well the normalization performed:
+
+```{r}
+features_plots <- sbc_plot(feature_blank_na_rds, feature_batch, classes = colData(feature_batch)[[2]], qc_label = "pool", 
+                           batch = rep(1, 28), output = NULL)
+features_plots[1]
+features_plots[5]
+features_plots[10]
+```
+
+Before further analysis we may want to normalize the data, transform it and eliminate QC sample rom the data:
+
+```{r}
+# feature_noblank_proc <- sampleFilter(feature_noblank_na_rsd, groupvar = 2, sampname = "pool")
+# feature_batch_proc <- sampleFilter(feature_batch_proc, groupvar = 2, sampname = "pool")
+feature_blank_na_rds <- prePro(feature_blank_na_rds, prefuns = c("pqn"), groupvar = 2, qcname = "pool")
+feature_batch <- prePro(feature_batch, prefuns = c("pqn"), groupvar = 2, qcname = "pool")
+
+
+feature_noblank_proc_noqc <- metabFeatureFilter(feature_blank_na_rds, groupvar = 2, nafilter = TRUE, naratioThr = 0.4, 
+                                            naratioMethod = "across", sampfilter = TRUE, filtername = "pool")
+feature_batch_no_qc <- metabFeatureFilter(feature_batch, groupvar = 2, sampfilter = TRUE, nafilter = TRUE, naratioThr = 0.4,
+                                            naratioMethod = "across", filtername = "pool")
+```
+
+### Basic feature selection
+
+After pre-procesing and normalization we may want to filter more features for further data analysis, the already used `metabFeatureFilter()` can be used to eliminate features that aren't M0, do not have an annotation or a basic criteria such as most coefficient of variation (CV).
+
+To decide a threshold for the CV, we can use the featureVarPlot() function with the corresponding variation function.
+
+```{r}
+cvFun <- function(x){sd(x, na.rm = T)/mean(x, na.rm = T)}
+featureVarPlot(feature_batch_no_qc, varfun = cvFun)
+```
+
+```{r}
+selected_features <- metabFeatureFilter(feature_batch_no_qc, varfilter = TRUE, 
+                                        varfun = cvFun, varquant = TRUE, 
+                                        varthr = 0.7, groupvar = 2)
+```
+
+### Feature comparison
+
+After we have selected all the features we want to keep, we will compare them using univariate methods. First, we must decide the test to perform: the t-test will be used for normal feature distribution and the mann-whitney test otherwise. To this end we must test for the normality of the data using QQ-plots or the Shapiro-Wilkins test for each feature group. 
+
+```{r}
+# apply(assay(selected_features)[,], )
+```
+
+
+
+```{r}
+group_comps_raw <- groupComp(feature_noblank_proc_noqc, groupvar = "gender", test = "wilcox", adj.method = "fdr")
+group_comps_batch <- groupComp(feature_batch_no_qc, groupvar = "gender", test = "wilcox", adj.method = "fdr")
+group_comps_batch_selected <- groupComp(selected_features, groupvar = "gender", test = "wilcox", adj.method = "fdr")
+```
+
+This generates a list of comparison tables between each factor of the selected group variable. Each table contains the corresponding statistic, the 
+
+With this comparison tables then we can visualize the results with a volcano plot:
+
+```{r}
+groupFeatureVolcano(comptable = group_comps_raw[[1]], adj.pvalue = F)
+groupFeatureVolcano(comptable = group_comps_batch[[1]], adj.pvalue = F)
+groupFeatureVolcano(comptable = group_comps_batch_selected[[1]], adj.pvalue = F)
+```
+
+Or filter them directly using p-value and fold-change thresholds with the groupFeatureFilter()
+
+```{r}
+selected_features <- groupFeatureFilter(selected_features, 
+                                        comptable = group_comps[[1]], 
+                                        pvalthr = 0.05, logFCthr = 1, 
+                                        padjusted = F)
+selected_features
+```
+
+We see that using corrected p-values we find no significant features so we will use, in this example, the non-corrected p-values even though corrected p-values should always be used.
+
+To finalize this section, features can be compared with boxplots using the `compPlot()` function
+
+```{r}
+feature_boxplots <- compPlot(selected_features, groupvar = 2)
+feature_boxplots[[1]]
+feature_boxplots[[5]]
+feature_boxplots[[13]]
+```
+
+### PCA plots
+
+To make PCA plots from the results, we will recover the batch corrected features, repeat the feature filter, without eliminating QC, process them with the pqn normalization, knn imputation and glog transformation, eliminate QCs and make the PCA plots
+
+```{r}
+feature_batch_sel <- metabFeatureFilter(feature_batch, varfilter = TRUE, 
+                                        varfun = cvFun, varquant = TRUE, 
+                                        varthr = 0.7, groupvar = 2, nafilter = TRUE, 
+                                        naratioThr = 0.4, naratioMethod = "across")
+
+feature_batch_sel_proc <- prePro(feature_batch_sel, 
+                                prefuns = c("pqn", "mvImp", "glog"), 
+                                method = "knn", groupvar = 2, qcname = "pool")
+feature_batch_sel_noqc <- metabFeatureFilter(feature_batch_sel_proc, groupvar = 2, 
+                                        sampfilter = TRUE, filtername = "pool")
+feature_batch_sel_noqc <- groupFeatureFilter(feature_batch_sel_noqc, 
+                                        comptable = group_comps[[1]], 
+                                        pvalthr = 0.05, logFCthr = 1, 
+                                        padjusted = F)
+feature_sel_pca <- multipca(feature_batch_sel_noqc, groupvar = 2, scale = FALSE)
+pcaPlot(feature_sel_pca, feature_batch_sel_noqc, groupvar = "gender")
+```
+
+Also, we can visualize the loadings in a lollipop plot:
+
+```{r}
+loadingsPlot(feature_sel_pca)
+```
+
+Para finalizar este apartado, podemos ver como se clusterizan las features en un heatmap con un dendograma en el eje de las muestras:
+
+```{r}
+library(gplots)
+p <- heatmapPlot(feature_batch_sel_noqc2, groupvar = "gender")
+```
+
+### Feature Selection for Machine Learning
+
+After normalizing or not normalizing the features we may continue filtering features depending on the experiment objective. For example, if we want to make a prediction for sex in this dataset, we can select features using the `featuresSign()` `featureSelection()` functions:
+
+```{r, warning=FALSE}
+feature_batch_proc <- prePro(feature_batch_no_qc, prefuns = c("mvImp"), method = "knn", groupvar = 2)
+
+feature_sign2 <- featureSign(feature_batch_proc, groupvar = "gender")
+apply(feature_sign2@tierMC, 2, table)
+```
+
+We can see in the final model accuracy, the batch normalized data performs better than the non-normalized.
+
+In this example we found only one feature with score S corresponding to FT0050. We may filter features depending on a minimum biosigner score using the featureSelection() function.
+
+```{r}
+selected_features <- featureSelection(feature_batch_proc, feature_sign2, model = 2, scoremin = "A")
+```
+
+
+
+### Machine Learning
+
+After we have our filtered features we may train one of the multiple possible machine learning methods:
+
+First we separate out data into two datasets, a validation dataset and the training dataset:
+
+```{r}
+set.seed(123)
+train <- sample(1:18, round(ncol(feature_batch_proc)*0.7), replace = FALSE)
+train_features <- feature_batch_proc[,train]
+test_features <- feature_batch_proc[,-train]
+``` 
+
+Then we may train a biosigner model with the training data, and use the resulting models (if there are A or S features) to find prediction error
+
+```{r}
+feature_sign2 <- featureSign(train_features, groupvar = "gender")
+apply(feature_sign2@tierMC, 2, table)
+t <- table(predict(feature_sign2, newdata = t(assay(test_features)), tierMaxC = "A")[,1],
+            colData(test_features)[["gender"]])
+t
+sum(diag(t))/sum(t)
+```
+
+Or, we can use the mlFit() function to use one of the caret available training models:
+
+```{r}
+rf_fit <- mlFit(dt = train_features, "gender", "rf")
+rf_fit
+t <- table(predict(rf_fit, newdata = t(assay(test_features))),
+        colData(test_features)[["gender"]])
+t
+sum(diag(t))/sum(t)
 ```
 

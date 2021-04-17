@@ -47,6 +47,11 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
                         ptitle = paste(mz[1], "-", mz[2], "mz",
                                         collapse = ""), xlab = "rt",
                         ylab = "Intensity", angle = 0)
+    # if(class(object)[1] == "XCMSnExp"){
+    #     if(hasChromPeaks(object)){
+    #
+    #     }
+    # }
     if(interactive){
         return(ggplotly(p))
     }
@@ -54,8 +59,9 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
 }
 #'@export
 # Creates a violin/boxplot TIC plot from an XCMS object
-ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
-                        violin = FALSE, interactive = TRUE, order = FALSE){
+ggTicQuality <- function(object, filenum = NA, pheno_var = 2, pheno_filter,
+                        logscale = TRUE, violin = FALSE, interactive = TRUE,
+                        order = FALSE){
     # Data preparation
     if(any(is.na(filenum))){
         filenum <- seq_along(fileNames(object))
@@ -65,16 +71,20 @@ ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
     } else{
         logscale <- NA
     }
-    # Creates de data
-    bpdt <- split(tic(filterFile(object, filenum)),
-                  f = fromFile(filterFile(object, filenum)))
+    groups <- phenoData(object)@data[[pheno_var]][filenum]
+    if(!missing(pheno_filter) & (pheno_filter %in% groups)){
+        filenum <- filenum[groups == pheno_filter]
+        groups <- phenoData(object)@data[[pheno_var]][filenum]
+    }
     if(order){
         plabs <- seq_along(fileNames(object))
     } else{
         plabs <- sub(pattern = "\\.[mM][zZ][xX]?[mM][lL]$", replacement = "",
                     x =  basename(fileNames(object)))[filenum]
     }
-    groups <- phenoData(object)@data[[pheno_var]][filenum]
+    # Creates de data
+    bpdt <- split(tic(filterFile(object, filenum)),
+                  f = fromFile(filterFile(object, filenum)))
     plottype <- ifelse(violin == TRUE, "violin", "boxplot")
     p <- ggStandardPlot(dt = bpdt, plabs = plabs, groups = groups,
                         plottype = plottype, ytrans = logscale,
@@ -85,11 +95,10 @@ ggTicQuality <- function(object, filenum = NA, pheno_var = 2, logscale = TRUE,
     }
     return(p)
 }
-
+#'@export
 ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
                             xtrans = NA, xlab, ylab, angle = 90,
                             origin_lines = FALSE, smoothing = FALSE){
-    # plabs <- factor(plabs[plotorder], ordered = TRUE)
     # Creates the base plot
     chrom_base <- ggplot() + theme_classic() + xlab(xlab) +
     ylab(ylab) + ggtitle(ptitle) +
@@ -129,14 +138,13 @@ ggStandardPlot <- function(dt, plabs, groups, plottype, ptitle, ytrans = NA,
     for(i in seq_along(chrom_plot)){
         chrom_base <- chrom_base + chrom_plot[[i]]
     }
-    # Applies selected transformations to selected axis
     if(!is.na(ytrans)){
-        chrom_base <- chrom_base + scale_y_continuous(trans = ytrans) +
-        ylab(paste0("Intensity ", "(", ytrans, ")"))
+        chrom_base <- chrom_base + ylab(paste0("Intensity ", "(", ytrans, ")")) +
+            scale_y_continuous(trans = ytrans)
     }
     if(!is.na(xtrans)){
-        chrom_base <- chrom_base + scale_x_continuous(trans = xtrans) +
-        xlab(paste0("Intensity ", "(", xtrans, ")"))
+        chrom_base <- chrom_base + xlab(paste0("Intensity ", "(", xtrans, ")")) +
+            scale_x_continuous(trans = xtrans)
     }
     # Extra plotting options
     if(origin_lines){

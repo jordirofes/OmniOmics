@@ -6,9 +6,9 @@
 \usage{
 ggExprDistrPlot(
   object,
-  violin,
+  violin = TRUE,
   groupvar,
-  interactive,
+  interactive = TRUE,
   nsamp = 1e+05,
   ytrans = "log2"
 )
@@ -18,19 +18,24 @@ ggExprDistrPlot(
 
 \item{violin}{A boolean indicating if the plot will be a violin plot/boxplot}
 
-\item{groupvar}{A numeric indicating the column to use as grouping factor or a character indicating it's name}
+\item{groupvar}{A numeric indicating the column to use as grouping factor or a
+character indicating it's name}
 
-\item{interactive}{A boolean indicating if the plot will be converted to an interactive `ggplotly()`}
+\item{interactive}{A boolean indicating if the plot will be converted to an
+interactive `ggplotly()`}
 
-\item{nsamp}{The number of samples used in the plotting to reduce computation time}
+\item{nsamp}{The number of samples used in the plotting to reduce computation
+time}
 
-\item{ytrans}{A transformation applied to the represented intensities, usually log2 for microarray analysis}
+\item{ytrans}{A transformation applied to the represented intensities, usually
+log2 for microarray analysis}
 }
 \value{
 Returns a ggplot object or a ggplotly
 }
 \description{
-Creates a boxplot/violin plot from a microarray object with `exprs()` such as an ExpressionSet
+Creates a boxplot/violin plot from a microarray object with
+ `exprs()` such as an ExpressionSet
 }
 \examples{
 plot_crayons()
