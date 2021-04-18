@@ -278,7 +278,7 @@ feature_boxplots[[13]]
 
 ### PCA plots
 
-Para hacer PCA de los resultados recuperaremos las features corregidas por el efecto *batch*, repetiremos el filtraje de las features sin eliminar los QC; procesaremos con la normalización PQN, la imputación con de k-NN, la transformación glog; eliminaremos los QCs y haremos los plots de la PCA.
+Para hacer PCA de los resultados recuperaremos las features con el efecto *batch* corregido, repetiremos el filtraje de las features sin eliminar los QC; las procesaremos utilizando la normalización PQN, la imputación de valores *missing* con un k-NN y la transformación del logaritmo generalizado (glog); eliminaremos los QCs y crearemos los plots.
 
 ```{r}
 feature_batch_sel <- metabFeatureFilter(feature_batch, varfilter = TRUE, 
@@ -299,7 +299,7 @@ feature_sel_pca <- multipca(feature_batch_sel_noqc, groupvar = 2, scale = FALSE)
 pcaPlot(feature_sel_pca, feature_batch_sel_noqc, groupvar = "gender")
 ```
 
-Aparte de el plot de la PCA en si, también podemos visualizar los loadings de la contribución de cada feature en el componente correspondiente:
+Aparte del plot de la PCA en si, también podemos visualizar los loadings, que nos indican la contribución de cada feature en el componente correspondiente:
 
 ```{r}
 loadingsPlot(feature_sel_pca)

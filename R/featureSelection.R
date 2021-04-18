@@ -169,7 +169,6 @@ setGeneric("annotateData", function(features, tableList, anotpackage, metabList)
 #'@export
 setMethod("annotateData", c("ANY", "list", "character"), function(features, tableList, anotpackage){
     annotated_tables <- lapply(seq_along(tableList), function(x){
-        browser()
         annot <- annotateTable(tableList[[x]], anotpackage)
         rownames(tableList[[x]]) <- annot$SYMBOL
         cbind(tableList[[x]], annot)
