@@ -163,12 +163,13 @@ groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"
     return(fittables)
 }
 #'@export
-setGeneric("annotateData", function(features, tableList, anotpackage){
+setGeneric("annotateData", function(features, tableList, anotpackage, metabList){
     standardGeneric("annotateData")
 })
 #'@export
-setMethod("annotateData", c("ANY", "list"), function(features, tableList, anotpackage){
+setMethod("annotateData", c("ANY", "list", "character"), function(features, tableList, anotpackage){
     annotated_tables <- lapply(seq_along(tableList), function(x){
+        browser()
         annot <- annotateTable(tableList[[x]], anotpackage)
         rownames(tableList[[x]]) <- annot$SYMBOL
         cbind(tableList[[x]], annot)
@@ -182,10 +183,15 @@ setMethod("annotateData", "ExpressionSet", function(features, tableList, anotpac
     return(features)
 })
 #'@export
+setMethod("annotateData", "SummarizedExperiment", function(features, metabList){
+    rownames(features) <- metabList
+    return(features)
+})
+#'@export
 annotateTable <- function(feat_dt, anotpackage){
     genes <- rownames(feat_dt)
     packData <- eval(parse(text = anotpackage))
-    genes_anotat <- select(packData, genes, c("SYMBOL", "ENTREZID", "GENENAME"))
+    genes_anotat <- AnnotationDbi::select(packData, genes, c("SYMBOL", "ENTREZID", "GENENAME"))
     return(genes_anotat)
 
 }
@@ -199,11 +205,12 @@ groupFeatureVolcano <- function(comptable, adj.pvalue = TRUE, interactive = TRUE
         groups <- ifelse(dt_thr, "royalblue4", "grey40")
         dt$adj.P.Val <- -log10(dt$adj.P.Val)
     } else{
-        dt <- comptable[,c("logFC", "p.value")]
-        dt_thr <- dt$p.value <= 0.05 & abs(dt$logFC) > 1
+        dt <- comptable[,c("logFC", "P.Value")]
+        dt_thr <- dt$P.Value <= 0.05 & abs(dt$logFC) > 1
         groups <- ifelse(dt_thr, "royalblue4", "grey40")
-        dt$p.value <- -log10(dt$p.value)
+        dt$P.Value <- -log10(dt$P.Value)
     }
+    dt_labs <- rownames(comptable)
     dt <- as.list.data.frame(dt)
     p <- ggStandardPlot(dt = dt, groups = NULL, plottype = "scatter",
                         ptitle = paste("Volcano plot for:", compname),

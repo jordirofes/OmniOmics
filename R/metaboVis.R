@@ -12,7 +12,7 @@
 #'
 #'@export
 # Creates a ggplot2 chromatogram or EIC from an XCMS object
-ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
+ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, rtint = NA, pheno_var = 1,
                         chromtype = "max", logscale = TRUE, interactive = TRUE){
     if(any(is.null(mz))){
         mz <- c(-Inf, Inf)
@@ -29,6 +29,9 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
     } else{
         logscale <- NA
     }
+    if(is.na(rtint)){
+        rtint <- c(min(xcms::rtime(object)), max(xcms::rtime(object)))
+    }
     # Colors by sample names
     groups <- sub(object@phenoData@data[,pheno_var][filenum], pattern =
                                 "\\.mzX?ML",replacement =  "")
@@ -36,7 +39,7 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, pheno_var = 1,
         object <- filterFile(object, filenum)
     }
     # Chromatogram creation
-    chrom_dt <- chromatogram(object, aggregationFun = chromtype, mz = mz)
+    chrom_dt <- chromatogram(object, aggregationFun = chromtype, mz = mz, rt = rtint)
     if(any(is.infinite(mz))){
         mz <- round(mz(chrom_dt[,1]), 4)
     }
@@ -72,9 +75,11 @@ ggTicQuality <- function(object, filenum = NA, pheno_var = 2, pheno_filter,
         logscale <- NA
     }
     groups <- phenoData(object)@data[[pheno_var]][filenum]
-    if(!missing(pheno_filter) & (pheno_filter %in% groups)){
-        filenum <- filenum[groups == pheno_filter]
-        groups <- phenoData(object)@data[[pheno_var]][filenum]
+    if(!missing(pheno_filter)){
+        if(pheno_filter %in% groups){
+            filenum <- filenum[groups == pheno_filter]
+            groups <- phenoData(object)@data[[pheno_var]][filenum]
+        }
     }
     if(order){
         plabs <- seq_along(fileNames(object))

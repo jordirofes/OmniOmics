@@ -1,21 +1,39 @@
 ---
 title: "OmniOmics"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{OmniOmics}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+date: '`r format(Sys.Date(),"%e de %B, %Y")`'
+output:
+    html_document:
+        toc: true
+        toc_float: true
+    pdf_document:
+        latex_engine: xelatex
+        toc: true
+        toc_depth: 3
+        fig_caption: yes
+    df_print: paged
 ---
 
-# Data analysis workflows {.tabset}
+```{css, echo = FALSE}
+.tocify-header {
+    text-indent: initial;
+}
+```
+
+```{css, echo = FALSE}
+.tocify-subheader > .tocify-item {
+  text-indent: initial;
+  padding-left: 2em;
+}
+```
+
+# Data analysis workflow examples {.tabset}
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
     comment = "#>",
     warning = FALSE,
-    message = FALSE
-)
+    message = FALSE, fig.width = 5, fig.height = 4)
 ```
 
 ```{r setup}
@@ -39,13 +57,20 @@ library(affy)
 library(limma)
 library(genefilter)
 library(pvca)
+library(biosigner)
+library(ROCR)
+library(mogene21sttranscriptcluster.db)
+library(AnnotationDbi)
+library(biomaRt)
 ```
 
 ## Metabolómica
 
 ### Carga de los datos
 
-```{r, eval=FALSE}
+En este ejemplo, utilizaremos una versión reducida del sacurine dataset.
+
+```{r}
 pheno_dt <- phenoImport("D:/Sacurine/", header = TRUE, sep = "\t")
 # We work with a reduced dataset to speed the computations
 files <- list.files("D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sacurine/Processed", 
@@ -53,7 +78,7 @@ files <- list.files("D:/Jordi/Bioinformatica UOC/2n Semestre/TFM/Metabolomics/Sa
 samp_names <- sub(pattern = "\\.mzX?ML$", replace = "", basename(files)) 
 pd2 <- pheno_dt[which(pheno_dt$X %in% samp_names),]
 str(pheno_dt)
-file_dt2 <- metaboImport(files[-6], phenodata = pd2, injectionvar = "X")
+file_dt <- metaboImport(files[-6], phenodata = pd2, injectionvar = "X")
 ```
 
 ### Visualización de los datos
@@ -75,7 +100,7 @@ Podemos ver que el TIC de los controles de calidad se va reduciendo a lo largo d
 Después podemos visualizar cromatogramas y *extracted ion chromatocram* (EIC) con la funcion `ggChromPlot()` según si se especifica un rango de mz o no.
 
 ```{r}
-ggChromPlot(file_dt2, filenum = 30:35, mz = 179.056, ppm = 20, pheno_var = 1, chromtype = "sum", logscale = TRUE)
+ggChromPlot(file_dt, filenum = 30:35, mz = 179.056, ppm = 20, pheno_var = 1, chromtype = "sum", logscale = TRUE)
 ```
 
 ### Procesado de datos
@@ -228,12 +253,12 @@ O filtrar features utilizando valores límite de p-value (ajustados o no) y log2
 
 ```{r}
 selected_0_features <- groupFeatureFilter(selected_features, 
-                                        comptable = group_comps[[1]], 
+                                        comptable = group_comps_batch_selected[[1]], 
                                         pvalthr = 0.05, logFCthr = 1, 
                                         padjusted = T)
 selected_0_features
 selected_features <- groupFeatureFilter(selected_features, 
-                                        comptable = group_comps[[1]], 
+                                        comptable = group_comps_batch_selected[[1]], 
                                         pvalthr = 0.05, logFCthr = 1, 
                                         padjusted = F)
 
@@ -245,7 +270,7 @@ Vemos que, utilizando los p-valores corregidos, no encontramos ninguna feature s
 Para finalizar esta sección, las features serán comparadas con boxplots utilizando la función `compPlot()`:
 
 ```{r}
-feature_boxplots <- compPlot(selected_features, groupvar = 2)
+feature_boxplots <- compPlot(selected_features, groupvar = "gender")
 feature_boxplots[[1]]
 feature_boxplots[[5]]
 feature_boxplots[[13]]
@@ -267,7 +292,7 @@ feature_batch_sel_proc <- prePro(feature_batch_sel,
 feature_batch_sel_noqc <- metabFeatureFilter(feature_batch_sel_proc, groupvar = 2, 
                                         sampfilter = TRUE, filtername = "pool")
 feature_batch_sel_noqc <- groupFeatureFilter(feature_batch_sel_noqc, 
-                                        comptable = group_comps[[1]], 
+                                        comptable = group_comps_batch_selected[[1]], 
                                         pvalthr = 0.05, logFCthr = 1, 
                                         padjusted = F)
 feature_sel_pca <- multipca(feature_batch_sel_noqc, groupvar = 2, scale = FALSE)
@@ -284,7 +309,7 @@ Para finalizar este apartado, podemos ver como se clusterizan las features en un
 
 ```{r}
 library(gplots)
-p <- heatmapPlot(feature_batch_sel_noqc2, groupvar = "gender")
+p <- heatmapPlot(feature_batch_sel_noqc, groupvar = "gender")
 ```
 
 ### Feature Selection for Machine Learning
@@ -336,7 +361,7 @@ t
 Para la segunda, la función `mlFit()` utilizará el modelo seleccionado del paquete `caret` y se obtendrá el modelo resultante, los resultados de la crossvalidation y el objeto para hacer el pre-procesado del dataset de validación:
 
 ```{r}
-rf_fit <- mlFit(dt = train_features, "gender", "rf")
+rf_fit <- mlFit(dt = train_features, "gender", "rf", tlength = 4)
 rf_fit
 
 test_data <- predict(rf_fit$preProcess, t(assay(test_features)))
@@ -356,13 +381,7 @@ mlPredictROC(mlmod = rf_fit, newdt = test_features,
             prepro_obj = rf_fit$preProcess, groupvar = "gender", posclass = "F")
 ```
 
-### Transcriptómica
-
-Paquetes requeridos:
-
-```{r}
-
-```
+## Transcriptómica
 
 ### Importación de los datos
 
@@ -432,14 +451,14 @@ tr_cont_mat <- makeContrasts(KOvsWT.COLD = KO.COLD-WT.COLD,
                             INT = (KO.COLD-WT.COLD) - (KO.RT-WT.RT),
                             levels = tr_mod_mat)
 tr_comp_tables <- groupFeatureComp(tr_proc_filt[[1]], modelMatrix = tr_mod_mat, contrastMat = tr_cont_mat)
-tr_comp_tables[[1]]
-tr_ann_comp_tables <- annotateCompTable(tr_comp_tables, anotpackage = "mogene21sttranscriptcluster.db")
+head(tr_comp_tables[[1]])
+tr_ann_comp_tables <- annotateData(tableList = tr_comp_tables, anotpackage = "mogene21sttranscriptcluster.db")
 ```
 
 Hacemos el volcano plot con 1 de las tablas de comparación:
 
 ```{r}
-groupFeatureVolcano(tr_ann_comp_tables[[2]], annotated = TRUE)
+groupFeatureVolcano(tr_ann_comp_tables[[2]])
 ```
 
 Filtramos las features con diferencias significativas en una de las tablas:

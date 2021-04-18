@@ -48,11 +48,10 @@ matComp <- function(mat1, mat2, test, adj.method = "fdr", paired = FALSE,
             return(c(t$statistic, t$p.value))
         })
     }
-
     tt <- do.call(rbind, tt)
     cm$t.stad <- tt[,1]
     cm$P.Value <- tt[,2]
-    cm$adj.P.Val <- p.adjust(cm$p.value, method = adj.method)
+    cm$adj.P.Val <- p.adjust(cm$P.Value, method = adj.method)
     cm$compname <- rep(paste(gr[1], "VS", gr[2]), ncol(mat1))
     return(cm)
 }
