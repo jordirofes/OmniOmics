@@ -16,7 +16,7 @@ setMethod("featureVarPlot", definition =  function(features, varfun, interactive
 varPlot <- function(feat_index, feat_sd, interactive = TRUE){
     p <- ggStandardPlot(dt = list(feat_index, feat_sd), plottype = "scatter",
                     ptitle = "Distribution of feature variability",
-                    xlab = "Feature Index", ylab = "Standard deviation",
+                    xlab = "Feature Index", ylab = "Variation",
                     angle = 0, groups = NULL)
     p <- p + geom_vline(xintercept = length(feat_index)*0.90) +
         geom_vline(xintercept = length(feat_index)*0.95)
