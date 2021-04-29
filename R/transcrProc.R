@@ -115,7 +115,7 @@ ggPCAplot <- function(object, pc = c(1,2), groupvar,
 #'@export
 transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ","){
     # Searches fot a geo dataset if the geoid argument is not missing
-    if(!missing(geoid)){
+    if(!missing(geoid) | !is.null(geoid)){
         dt <- GEOquery::getGEO(geoid)
         if(dim(featureData(dt[[1]]))[2] == 0){
             stop("The selected accession entry data has no features")
