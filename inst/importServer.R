@@ -1,4 +1,4 @@
-importServer <- function(id){
+importServer <- function(id, objectList){
     moduleServer(
         id,
         function(input, output, session){
@@ -32,19 +32,21 @@ importServer <- function(id){
                             column(width = 4,
                                 shinyFilesButton(ns("dt_path"),style = "margin-top: 25px;", label="File select", title="Please select a file", multiple=TRUE),
                                 actionButton(ns("load_data"), label = "Load", style = "margin-top: 25px;")
-                            )
+                            ),
+                            column(width = 4,
+                                textInput(inputId = ns("fileName"), value = "experiment1", label = "Enter a name for the loaded object:"))
                         ),
                         fluidRow(
                             conditionalPanel("input.omic == 'Metabolomics'",
                                              column(width = 4,
                                                     radioButtons(inputId = ns("phenoVar"), label = "Order Variable:",
-                                                                 choices = "")
+                                                                 choices = "", selected = character(0))
                                             ), ns = ns
                             ),
                             conditionalPanel("input.omic == 'Transcriptomics'",
                                              column(width = 4,
                                                     textInput(inputId = ns("geoData"), label = "GEOdataset valid entry:",
-                                                            placeholder = "Ex. GSE46687")
+                                                            placeholder = "Ex. GSE46687", value = NA)
                                             ), ns = ns
                             ),
                             column(width = 8,
@@ -55,6 +57,7 @@ importServer <- function(id){
                 }, )
                 updateRadioButtons(inputId = "phenoVar", choices = colnames(phenoData()))
             }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
             loadedData <- reactive({
                 validate(need(input$dt, message = FALSE))
                 input$dt
@@ -63,39 +66,38 @@ importServer <- function(id){
             shinyFileChoose(input, "dt_path", root=getVolumes(), filetypes=c("", "mzXML", "mzML"))
 
             data_paths <- reactive({
+                    parseFilePaths(roots = getVolumes(), selection = input$dt_path)$datapath
+            })
+            output$path_names <- renderPrint({
                 if(is.integer(input$dt_path)){
                     "No files selected"
                 } else{
-                    parseFilePaths(roots = getVolumes(), selection = input$dt_path)$datapath
+                    data_paths()
                 }
             })
-            output$path_names <- renderPrint({data_paths()})
-
-            dtObject <- reactive({
-                input$load_data
-                isol_data_path <- isolate(data_paths())
-                ext <- tools::file_ext(isol_data_path)
+            returnData <- reactiveValues(object = NULL, trigger = 0)
+            observeEvent(input$load_data, {
+                ext <- tools::file_ext(isolate(data_paths()))
                 ext <- tolower(ext)
-                validate(need(isol_data_path, message = FALSE))
                 if(isolate(input$omic) == "Metabolomics"){
                     validate(need(ext == "mzml" | ext == "mzxml", message = "Input a valid metabolomics data file"))
-                    metaboImport(filedir = isol_data_path,
-                                phenodata = isolate(phenoData()),
-                                injectionvar = isolate({input$phenoVar}))
+                    returnData$object <- metaboImport(filedir = isolate(data_paths()),
+                                                phenodata = isolate(phenoData()),
+                                                injectionvar = isolate({input$phenoVar}))
                 } else if(isolate(input$omic) == "Transcriptomics"){
-                    validate(need(ext == "cel", message = "", message = "Input a valid transcriptomic data file"))
-                    transcriImport(datapath = isol_data_path,
-                                phenodata = phenoData(), geoid = input$geoData)
+                    validate(need(ext == "cel", message = "",
+                                message = "Input a valid transcriptomic data file"))
+                    returnData$object <- transcriImport(datapath = isolate(data_paths()),
+                                    phenodata = isolate(phenoData()),
+                                    geoid = isolate(input$geoData))
                 }
-            })
-            browser()
-            observeEvent(eventExpr = dtObject(), {
-                if(!is.null(dtObject)){
-                    sendSweetAlert(title = "Data Loading",
+                sendSweetAlert(title = "Data Loading",
                                 text = "Your data was loaded successfully!",
                                 type = "success", session = session)
-                }
-            }, ignoreInit = TRUE)
+                returnData$trigger <- isolate(returnData$trigger) + 1
+                returnData$objectName <- input$fileName
+            }, ignoreNULL = TRUE, ignoreInit = TRUE, priority = 1)
+            return(returnData)
         }
     )
 }
