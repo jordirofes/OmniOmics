@@ -8,7 +8,11 @@ library(SummarizedExperiment)
 library(CAMERA)
 library(cliqueMS)
 
-source(list.files(system.file("app", "OmniOmics"), full.names = TRUE))
+i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
+i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
+for(j in 1:length(i)){
+    source(i[j], local = TRUE)
+}
 # source("./inst/importServer.R", )
 # source("./inst/importUI.R")
 # source("./inst/objectDataServer.R")
