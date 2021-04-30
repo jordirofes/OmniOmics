@@ -4,6 +4,17 @@ library(shinyWidgets)
 library(shinyFiles)
 library(OmniOmics)
 library(xcms)
+library(SummarizedExperiment)
+library(CAMERA)
+library(cliqueMS)
+
+source(list.files(system.file("app", "OmniOmics"), full.names = TRUE))
+# source("./inst/importServer.R", )
+# source("./inst/importUI.R")
+# source("./inst/objectDataServer.R")
+# source("./inst/objectDataUI.R")
+# source("./inst/processServer.R")
+# source("./inst/processUI.R")
 
 ui <- dashboardPage(
     dashboardHeader(title = "OmniOmics"),
@@ -40,9 +51,15 @@ server <- function(input, output, session){
         objectList$objects <- c(isolate(objectList$objects), objectListed)
         # objectList$len <- length(isolate(objectList$objects))
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
-    procVars <- processServer("proc")
+    returnProc <- processServer("proc", objectList)
+    observeEvent(returnProc$trigger, {
+        objectListed <- isolate(returnProc$object)
+        names(objectListed) <- isolate(returnProc$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
     objectDataServer("objectDt", objectList)
+
     print(objectList)
 }
 

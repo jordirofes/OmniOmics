@@ -55,6 +55,7 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
         rtadjust <- FALSE
         group <- FALSE
         fill <- FALSE
+        stop("Only one sample detected, you must process more than one sample")
     }
     # CentWave peak picking
     centParam <- CentWaveParam(peakwidth = peakwidth, noise = noise,
@@ -88,7 +89,7 @@ metaboProc <- function(object, polarity = "positive", groupvar, peakwidth,
         peakDt <- fillChromPeaks(peakDt)
     }
     if(annotation == "none"){
-        return(peakDt)
+
     } else if(annotation == "camera"){
         # camera annotation
         xcms_set <- as(peakDt, "xcmsSet")

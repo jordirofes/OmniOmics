@@ -192,6 +192,8 @@ setMethod("procTranscript", "ExpressionSetIllumina",
 #'@export
 setMethod("procTranscript", "GeneFeatureSet", function(object, annotationTable){
     norm_gene <- oligo::rma(object)
-    annotation(norm_gene) <- annotationTable
+    if(!is.missing(annotationTable) & is.null(annotation(norm_gene))){
+        annotation(norm_gene) <- annotationTable
+    }
     return(norm_gene)
 })

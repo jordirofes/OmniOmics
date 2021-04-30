@@ -2,13 +2,20 @@
 #'@importFrom plotly ggplotly
 #'@import oligo
 #'@import beadarray
-#'@importFrom genefilter nsFilter
+#'@import genefilter
 #'@import xcms
 #'@import biosigner
 #'@import xlsx
 #'@import CAMERA
 #'@import cliqueMS
 #'@import dplyr
+#'@import pmp
+#'@import limma
+#'@import caret
+#'@import shiny
+#'@import shinyWidgets
+#'@import shinyFiles
+#'@import SummarizedExperiment
 #'
 #'@export
 # Creates a ggplot2 chromatogram or EIC from an XCMS object

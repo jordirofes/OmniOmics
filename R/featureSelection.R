@@ -296,3 +296,11 @@ setMethod("extractPhenoData", "GeneFeatureSet", function(dt){
 setMethod("extractPhenoData", "SummarizedExperiment", function(dt){
     return(colData(dt))
 })
+#'@export
+setMethod("extractPhenoData", "OnDiskMSnExp", function(dt){
+    return(phenoData(dt))
+})
+#'@export
+setMethod("extractPhenoData", "XCMSnExp", function(dt){
+    return(phenoData(dt))
+})
