@@ -7,6 +7,7 @@ library(xcms)
 library(SummarizedExperiment)
 library(CAMERA)
 library(cliqueMS)
+library(pmp)
 
 i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
 i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
@@ -26,19 +27,17 @@ ui <- dashboardPage(
         sidebarMenu(
             menuItem("Data Import", tabName = "importData", icon = icon("th")),
             menuItem("Object Data", tabName = "objectData", icon = icon("th")),
-            menuItem("Data Processing", tabName = "procData", icon = icon("th"))
+            menuItem("Data Processing", tabName = "procData", icon = icon("th")),
+            menuItem("Batch Correction", tabName = "batchCorr", icon = icon("th")),
+            menuItem("Feature Processing", tabName = "featureProc", icon = icon("th"))
     )),
     dashboardBody(
         tabItems(
-            tabItem(tabName = "importData",
-                importUI("import")
-            ),
-            tabItem(tabName = "objectData",
-                objectDataUI("objectDt")
-            ),
-            tabItem(tabName = "procData",
-                processUI("proc")
-            )
+            tabItem(tabName = "importData", importUI("import")),
+            tabItem(tabName = "objectData", objectDataUI("objectDt")),
+            tabItem(tabName = "procData", processUI("proc")),
+            tabItem(tabName = "batchCorr", batchUI("corr")),
+            tabItem(tabName = "featureProc", batchUI("featProc"))
         )
     )
 )
@@ -55,6 +54,9 @@ server <- function(input, output, session){
         objectList$objects <- c(isolate(objectList$objects), objectListed)
         # objectList$len <- length(isolate(objectList$objects))
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
+
+    objectDataServer("objectDt", objectList)
+
     returnProc <- processServer("proc", objectList)
     observeEvent(returnProc$trigger, {
         objectListed <- isolate(returnProc$object)
@@ -62,9 +64,15 @@ server <- function(input, output, session){
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
-    objectDataServer("objectDt", objectList)
+    returnBatch <- batchServer("corr", objectList)
+    observeEvent(returnBatch$trigger, {
+        objectListed <- isolate(returnBatch$object)
+        names(objectListed) <- isolate(returnBatch$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
-    print(objectList)
+    returnFeatureProc <- featureProc("featProc", objectList)
+
 }
 
 

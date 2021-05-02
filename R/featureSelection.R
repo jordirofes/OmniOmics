@@ -39,9 +39,9 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                             samplename, cvqcfilt = FALSE,
                             cvqc_thr = 30, qcname = "QC", nafilter = FALSE,
                             naratioThr, naratioMethod, varfilter = FALSE,
-                            varfun, varthr, varquant, intensitythr,
-                            ism0 = FALSE, hasan = FALSE, sampfilter = FALSE,
-                            maxmv, filtername, ...){
+                            varfun, varthr, varquant, intfilter = FALSE,
+                            intensitythr, ism0 = FALSE, hasan = FALSE,
+                            sampfilter = FALSE, maxmv, filtername, ...){
     dt_groups <- extractPhenoData(features)[[groupvar]]
     if(blankfilt){
         features <- filter_peaks_by_blank(features, blankFoldChange, dt_groups,
@@ -49,7 +49,7 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                                         remove_samples = TRUE)
         dt_groups <- extractPhenoData(features)[[groupvar]]
     }
-    if(!missing(intensitythr)){
+    if(intfilter){
         features <- intFilter(features, intensitythr)
     }
     if(cvqcfilt){

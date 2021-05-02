@@ -47,7 +47,9 @@ batchNormalization <- function(features, method, injectionorder, batchnum, group
         if(length(injectionorder) == 1){
             injectionorder <- colData(features)[[injectionorder]]
         }
-        batchnum <- colData(features)[[batchnum]]
+        if(length(batchnum) == 1){
+            batchnum <- colData(features)[[batchnum]]
+        }
         groups <- colData(features)[[groups]]
             return(QCRSC(df = features, order = injectionorder,
                 batch = batchnum, classes = groups, qc_label = qcname, spar = 0,

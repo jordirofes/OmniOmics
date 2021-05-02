@@ -26,7 +26,7 @@ processUI <- function(id){
                                 choiceNames = c("No annotation", "CAMERA", "cliqueMS"),
                                 choiceValues = c("none", "camera", "cliqueMS"),
                                 label = "Choose an annotation step:")
-                )
+                ),
             ),
             fluidRow(
                 column(width = 3,

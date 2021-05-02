@@ -18,7 +18,7 @@ processServer <- function(id, objectList){
                 }
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-            returnData <- reactiveValues(object = NULL, objectNames = NULL, trigger = 0, elimParentObj = FALSE)
+            returnData <- reactiveValues(object = NULL, objectNames = NULL, trigger = 0)
 
             observeEvent({input$proc}, {
                 validate(need(input$object, message = FALSE))
