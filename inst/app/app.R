@@ -8,6 +8,8 @@ library(SummarizedExperiment)
 library(CAMERA)
 library(cliqueMS)
 library(pmp)
+library(biosigner)
+library(genefilter)
 
 i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
 i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
@@ -37,7 +39,7 @@ ui <- dashboardPage(
             tabItem(tabName = "objectData", objectDataUI("objectDt")),
             tabItem(tabName = "procData", processUI("proc")),
             tabItem(tabName = "batchCorr", batchUI("corr")),
-            tabItem(tabName = "featureProc", batchUI("featProc"))
+            tabItem(tabName = "featureProc", featureProcUI("featProc"))
         )
     )
 )
@@ -71,7 +73,7 @@ server <- function(input, output, session){
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
-    returnFeatureProc <- featureProc("featProc", objectList)
+    returnFeatureProc <- featureProcServer("featProc", objectList)
 
 }
 
