@@ -135,10 +135,10 @@ loadingsPlot <- function(pcdt, pc = 1, interactive = TRUE){
     return(p)
 }
 #'@export
-heatmapPlot <- function(features, groupvar, annotated){
+heatmapPlot <- function(features, groupvar){
     feature_dt <- extractData(features)
     group_dt <- extractPhenoData(features)[[groupvar]]
-    p <- heatmap.2(feature_dt, Rowv = FALSE, Colv = TRUE,
+    p <- heatmap.2(feature_dt, Rowv = TRUE, Colv = TRUE,
             main = "Feature heatmap",
             scale = "row", sepcolor = "white",
             sepwidth = c(0.05,0.05), cexRow = 0.5, cexCol = 0.9, key = TRUE,
@@ -180,7 +180,9 @@ featureCompPlot <- function(dt, pal, xlab, ...){
 }
 #'@export
 prePro <- function(features, prefuns, method, groupvar, qcname, blankname, ...){
-    groupvar <- extractPhenoData(features)[[groupvar]]
+    if(length(groupvar) == 1){
+        groupvar <- extractPhenoData(features)[[groupvar]]
+    }
     for(i in 1:length(prefuns)){
         if(prefuns[i] == "blankfill"){
             features <- blankFill(features, groupvar, blankname)

@@ -41,7 +41,8 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                             naratioThr, naratioMethod, varfilter = FALSE,
                             varfun, varthr, varquant, intfilter = FALSE,
                             intensitythr, ism0 = FALSE, hasan = FALSE,
-                            sampfilter = FALSE, maxmv, filtername, ...){
+                            sampfilter = FALSE, maxmv, filtername, prepro,
+                            preprofuns, mvimpmethod){
     dt_groups <- extractPhenoData(features)[[groupvar]]
     if(blankfilt){
         features <- filter_peaks_by_blank(features, blankFoldChange, dt_groups,
@@ -72,6 +73,10 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
     }
     if(hasan){
         features <- anotFilter(features)
+    }
+    if(prepro){
+        features <- prePro(features, prefuns = preprofuns, method = mvimpmethod,
+                        dt_groups, qcname, blankname)
     }
     if(sampfilter){
         features <- sampleFilter(features, groupvar = dt_groups,
@@ -139,8 +144,8 @@ intFilter <- function(features, intthr){
 #'@export
 # Limma gene filtering
 model.mat <- function(features, phenovar){
-    modmat <- model.matrix(~ 0 + pData(features)[[phenovar]])
-    colnames(modmat) <- sub(pattern = "pData(features)[[phenovar]]",
+    modmat <- model.matrix(~ 0 + extractPhenoData(features)[[phenovar]])
+    colnames(modmat) <- sub(pattern = "extractPhenoData(features)[[phenovar]]",
                             replacement = "", x = colnames(modmat),
                             fixed = TRUE)
     return(modmat)
@@ -236,12 +241,15 @@ groupFeatureFilter <- function(features, comptable, pvalthr = 0.05, logFCthr = 1
 }
 #'@export
 sampleFilter <- function(features, groupvar, groupname, maxmv){
+    if(!missing(groupname)){
+        features <- features[,groupvar != groupname]
+        groupvar <- groupvar[groupvar != groupname]
+    }
+
     if(!missing(maxmv)){
         features <- filter_samples_by_mv(features, max_perc_mv = maxmv, classes = groupvar, remove_samples = TRUE)
     }
-    if(!missing(groupname)){
-        features <- features[,groupvar != groupname]
-    }
+
     return(features)
 }
 

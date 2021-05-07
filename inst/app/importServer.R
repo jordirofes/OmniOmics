@@ -38,9 +38,9 @@ importServer <- function(id, objectList){
                         ),
                         fluidRow(
                             conditionalPanel("input.omic == 'Metabolomics'",
-                                             column(width = 4,
+                                            column(width = 4,
                                                     radioButtons(inputId = ns("phenoVar"), label = "Order Variable:",
-                                                                 choices = "", selected = character(0))
+                                                                choices = "", selected = character(0))
                                             ), ns = ns
                             ),
                             conditionalPanel("input.omic == 'Transcriptomics'",
@@ -51,7 +51,7 @@ importServer <- function(id, objectList){
                             ),
                             column(width = 8,
                                     verbatimTextOutput(outputId = ns("path_names"), placeholder = TRUE)
-                                )
+                            )
                         )
                     )
                 }, )
@@ -96,6 +96,35 @@ importServer <- function(id, objectList){
                                 type = "success", session = session)
                 returnData$trigger <- isolate(returnData$trigger) + 1
                 returnData$objectName <- input$fileName
+            }, ignoreNULL = TRUE, ignoreInit = TRUE, priority = 1)
+
+            shinyFileChoose(input, "dt_path2", root=getVolumes(), filetypes=c("rds"))
+
+            data_paths2 <- reactive({
+                    parseFilePaths(roots = getVolumes(), selection = input$dt_path2)$datapath
+            })
+            output$path_names2 <- renderPrint({
+                if(is.integer(input$dt_path2)){
+                    "No files selected"
+                } else{
+                    data_paths2()
+                }
+            })
+            observeEvent(input$load_data2, {
+                ext <- tools::file_ext(isolate(data_paths2()))
+                ext <- tolower(ext)
+                if(ext == "rds"){
+                    returnData$object <- readRDS(file = isolate(data_paths2()))
+                }
+                sendSweetAlert(title = "Data Loading",
+                                text = "Your data was loaded successfully!",
+                                type = "success", session = session)
+                returnData$trigger <- isolate(returnData$trigger) + 1
+                if(length(returnData$object) != 1){
+                    returnData$objectName <- paste0(input$fileName2, 1:length(returnData$object))
+                } else{
+                    returnData$objectName <- input$fileName2
+                }
             }, ignoreNULL = TRUE, ignoreInit = TRUE, priority = 1)
             return(returnData)
         }

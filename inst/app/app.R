@@ -10,6 +10,14 @@ library(cliqueMS)
 library(pmp)
 library(biosigner)
 library(genefilter)
+library(plotly)
+library(ggplot2)
+library(caret)
+library(biosigner)
+library(gplots)
+library(DT)
+library(limma)
+library(ggpubr)
 
 i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
 i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
@@ -31,7 +39,10 @@ ui <- dashboardPage(
             menuItem("Object Data", tabName = "objectData", icon = icon("th")),
             menuItem("Data Processing", tabName = "procData", icon = icon("th")),
             menuItem("Batch Correction", tabName = "batchCorr", icon = icon("th")),
-            menuItem("Feature Processing", tabName = "featureProc", icon = icon("th"))
+            menuItem("Feature Processing", tabName = "featureProc", icon = icon("th")),
+            menuItem("Group Comparisson", tabName = "groupComp", icon = icon("th")),
+            menuItem("Multivariate Analysis", tabName = "multAnal", icon = icon("th")),
+            menuItem("Machine Learning", tabName = "machLearn", icon = icon("th"))
     )),
     dashboardBody(
         tabItems(
@@ -39,7 +50,10 @@ ui <- dashboardPage(
             tabItem(tabName = "objectData", objectDataUI("objectDt")),
             tabItem(tabName = "procData", processUI("proc")),
             tabItem(tabName = "batchCorr", batchUI("corr")),
-            tabItem(tabName = "featureProc", featureProcUI("featProc"))
+            tabItem(tabName = "featureProc", featureProcUI("featProc")),
+            tabItem(tabName = "groupComp", groupCompUI("gComp")),
+            tabItem(tabName = "multAnal", multiAnalyUI("mAnal")),
+            tabItem(tabName = "machLearn", machineLearnUI("ml"))
         )
     )
 )
@@ -51,7 +65,12 @@ server <- function(input, output, session){
 
     returnImport <- importServer("import")
     observeEvent(returnImport$trigger,{
-        objectListed <- list(isolate(returnImport$object))
+        if(class(returnImport$object) != "list"){
+            objectListed <- isolate(returnImport$object)
+        } else{
+            objectListed <- list(isolate(returnImport$object))
+        }
+        objectListed <- isolate(returnImport$object)
         names(objectListed) <- isolate(returnImport$objectName)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
         # objectList$len <- length(isolate(objectList$objects))
@@ -74,7 +93,32 @@ server <- function(input, output, session){
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
     returnFeatureProc <- featureProcServer("featProc", objectList)
+    observeEvent(returnFeatureProc$trigger, {
+        objectListed <- list(isolate(returnFeatureProc$object))
+        names(objectListed) <- isolate(returnFeatureProc$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
+    returnGroupComp <- groupCompServer("gComp", objectList)
+    observeEvent(returnGroupComp$trigger, {
+        objectListed <- list(isolate(returnGroupComp$object))
+        names(objectListed) <- isolate(returnGroupComp$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
+
+    returnMultiAnaly <- multiAnalyServer("mAnal", objectList)
+    observeEvent(returnMultiAnaly$trigger, {
+        objectListed <- list(isolate(returnMultiAnaly$object))
+        names(objectListed) <- isolate(returnMultiAnaly$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
+
+    returnMachineLearn <- machineLearnServer("ml", objectList)
+    observeEvent(returnMachineLearn$trigger, {
+        objectListed <- list(isolate(returnMachineLearn$object))
+        names(objectListed) <- isolate(returnMachineLearn$objectNames)
+        objectList$objects <- c(isolate(objectList$objects), objectListed)
+    }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 }
 
 

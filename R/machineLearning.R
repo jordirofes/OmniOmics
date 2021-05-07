@@ -20,7 +20,7 @@ setMethod("mlFit",
                             selectionFunction = "oneSE")
     mod <- train(dt2, grp, method = method, metric = metric,
                 tuneLength = tlength, trControl = control,
-                preProcess = preproc)
+                preProcess = preproc, )
     # rf_mod <- train(dt2, grp,method = "rf", metric = "Accuracy",
     #                 tuneLength = 20, trControl = control,
     #                 preProcess = c("zv", "center", "scale"))

@@ -27,7 +27,7 @@ featurebatchQc <- function(features, groupvar, injectionvar, qcname,
 }
 #'@export
 featureBatchPVCA <- function(features, phenovars, threshold){
-    covariates <- colnames(pData(features))[phenovars]
+    covariates <- colnames(extractPhenoData(features))[phenovars]
     pvcadt <- pvcaBatchAssess(features, covariates, threshold)
     p <- ggStandardPlot(dt = pvcadt$dat, plabs = factor(pvcadt$label,
                                                         levels =  pvcadt$label,
