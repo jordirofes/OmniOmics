@@ -69,7 +69,7 @@ groupCompUI <- function(id){
             fluidPage(
                 fluidRow(
                     column(width = 4,
-                        SelectInput(inputId = ns("compTable"), label = "Select a comparison table:",
+                        selectInput(inputId = ns("compTable"), label = "Select a comparison table:",
                                     choices = "")
                     ),
                     column(width = 4,
