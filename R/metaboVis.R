@@ -19,6 +19,21 @@
 #'
 #'@export
 # Creates a ggplot2 chromatogram or EIC from an XCMS object
+#'@title Chromatogram plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a ggplot2 chromatogram or EIC from an XCMS object
+#'@param object A OnDiskXCMSnExp or XCMSnExp object
+#'@param filenum An optional numeric vector indicating the files to plot
+#'@param mz A numeric indicating the mz value to plot (requires the ppm param) or a numeric two with the mz limits to plot
+#'@param ppm An optional numeric indicating the ppm error for the mz param
+#'@param rtint An optional length two numeric vector indicating the retention time interval to plot
+#'@param pheno_var A numeric or string indicating the variable from the phenodata
+#'to use as file groups.
+#'@param chromtype The type of chromatogram to create. "max" for the maximum value and "sum" for the sum of intensities.
+#'@param logscale A boolean to apply a log10 transformation of the intensities
+#'@param interactive A boolean indicating if the plot will be converted to a plotly
+#'@return A ggplot2 or plotly line plot of the chromatogram.
+#'@export
 ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, rtint = NA, pheno_var = 1,
                         chromtype = "max", logscale = TRUE, interactive = TRUE){
     if(any(is.null(mz))){
@@ -67,8 +82,20 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, rtint = NA, phe
     }
     return(p)
 }
+#'@title Total ion count plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a violin/boxplot TIC plot from an XCMS object
+#'@param object A OnDiskXCMSnExp or XCMSnExp object
+#'@param filenum An optional numeric vector indicating the files to plot
+#'@param pheno_var A numeric or string indicating the variable from the phenodata
+#'to use as file groups.
+#'@param pheno_filter An optiona string of a variable name in pheno_var to filter from plotting
+#'@param violing A boolean indicating if a violin plot should be plot instead of a boxplot
+#'@param logscale A boolean to apply a log10 transformation of the intensities
+#'@param interactive A boolean indicating if the plot will be converted to a plotly
+#'@param order A boolean indicating if the file order should be used for the order of the samples
+#'@return A ggplot2 or plotly violin/boxplot TIC plot
 #'@export
-# Creates a violin/boxplot TIC plot from an XCMS object
 ggTicQuality <- function(object, filenum = NA, pheno_var = 2, pheno_filter,
                         logscale = TRUE, violin = FALSE, interactive = TRUE,
                         order = FALSE){

@@ -1,4 +1,14 @@
 # Variance plot
+#'@title Variance Plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a scatter plot with the ordered feature values after
+#'evaluating the given function for each feature usually used to visualize the
+#'distribution of IQR, standard deviation or coefficient of variation (CV) for each feature.
+#'@param features A SummarizedExperiment or ExpressionSet
+#'@param varfun A function to calculate for each feature, usually IQR / SD or function(x){sd(x)/mean(x)}
+#'@param interactive A boolean indicating if the plot will be converted to an
+#'  interactive `ggplotly()`
+#'@return Returns a ggplot object or a ggplotly
 #'@export
 setGeneric("featureVarPlot", function(features, varfun, interactive = TRUE){
     standardGeneric("featureVarPlot")
@@ -26,6 +36,10 @@ varPlot <- function(feat_index, feat_sd, interactive = TRUE){
     return(p)
 }
 # Gene feature filtering
+#'@title Gene Feature Filter
+#'@author Jordi Rofes Herrera
+#'@description Wrapper for the nsFilter() function. Use ?nsFilter for param information
+#'@return Returns filtered gene features
 #'@export
 geneFeatureFilter <- function(features, entrez, rem.dupEntrez, varfilt, varcutoff, var.func){
     return(nsFilter(features, require.entrez = entrez, remove.dupEntrez = rem.dupEntrez,
@@ -33,7 +47,42 @@ geneFeatureFilter <- function(features, entrez, rem.dupEntrez, varfilt, varcutof
                 filterByQuantile = TRUE))
 }
 # Metabolomic basic feature filtering
-#'@export
+#'@title Metablomics feature filter
+#'@author Jordi Rofes Herrera
+#'@description Filters metabolomic features with a variety of criteria using different functions
+#'@param features A SummarizedExperiment
+#'@param groupvar A string or numeric indicating the variable in the phenodata
+#'with the group variable (sample/qc/blank)
+#'@param blankfilt Boolean indicating blank filtering
+#'@param blankFoldChange A numeric indicating the fold change to filter features with high intensity in blank
+#'@param blankname A string indicating the blank name in the groupvar
+#'@param samplename A string indicating the sample name in the groupvar
+#'@param cvqcfilt A boolean indicating the filter of features with high RDS in QC samples
+#'@param cvqc_thr A numeric indicating the maximum percentage of RDS in QC samples
+#'@param qcname A string indicating the qcname in the groupvar variable
+#'@param nafilter A boolean indicating the filter of features with high percentage of missing values
+#'@param naratioThr A numeric indicating the fraction of NA values allowed in the features
+#'@param naratioMethod A string indicating the method for calculating the NA ratio: can be "QC" for within QC samples,
+#'"within" for within each sample class in groupvar and "across" for across all samples.
+#'@param varfilter A boolean indicating filtering depending on variability criteria
+#'@param varfun A function to calculate for each feature, usually IQR / SD or function(x){sd(x)/mean(x)}
+#'@param varthr The minimum threshold of variability to keep the features
+#'@param varquant A boolean indicating if the threshold is given as a precentile or an absolute value (TRUE/FALSE)
+#'@param intfilter A boolean indicating to filter by sample intensity
+#'@param intensitythr A value indicating the minimum intensity of atleast one sample in each feature
+#'@param ism0 A boolean indicating if filtering of features with non M0 annotations
+#'(Requires annotated SummarizedExperiment as done with the pre-processing functions)
+#'@param hasan A boolean indicating to filter features with no annotation
+#'(Requires annotated SummarizedExperiment as done with the pre-processing functions)
+#'@param samplfilter A boolean indicating to filter samples with high missing values
+#'@param maxmv A numeric indicating the fraction of maximum missing values in each sample
+#'@param filtername An optional name indicating the name of a variable in groupvar to eliminate all it's samples.
+#'Useful to eliminate QC samples after using them for all pre-processing.
+#'@param prepro A boolean indicating to do a pre-processing of all features
+#'@param preprofuns A vector of strings indicating all the functions applied to the features. Available options are:
+#'"pqn" point quotien normalization, "sum" normalization to the sum and "mvImp" multivariate imputation.
+#'@param mvimpmethod A string indicating the multivariate imputation method: "knn" or "rf".
+#'@return Returns a SummarizedExperiment with filtered features
 metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                             blankFoldChange = 2, blankname = "blank",
                             samplename, cvqcfilt = FALSE,
@@ -143,6 +192,14 @@ intFilter <- function(features, intthr){
 
 #'@export
 # Limma gene filtering
+#'@title Model matrix
+#'@author Jordi Rofes Herrera
+#'@description Creates a model matrix from an ExpressionSet
+#'@param features An ExpressionSet object
+#'@param phenovar A string or numeric indicating the group variable in the phenodata
+#'to create the model matrix with
+#'@return Returns filtered gene features
+#'@export
 model.mat <- function(features, phenovar){
     modmat <- model.matrix(~ 0 + extractPhenoData(features)[[phenovar]])
     colnames(modmat) <- sub(pattern = "extractPhenoData(features)[[phenovar]]",
@@ -150,6 +207,15 @@ model.mat <- function(features, phenovar){
                             fixed = TRUE)
     return(modmat)
 }
+#'@title Limma group comparison
+#'@author Jordi Rofes Herrera
+#'@description Calculates comparison tables with the Limma package for each group pair
+#'@param features An ExpressionSet object
+#'@param modelMatrix A model matrix
+#'@param contrastMat A contrast matrix
+#'@param adjpval A string indicating the p-value adjust methodology "fdr" or "bonferroni"
+#'to create the model matrix with
+#'@return A list of comparisson tables for each pair of groups
 #'@export
 groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"){
     fitmod <- lmFit(features, modelMatrix)
@@ -167,6 +233,14 @@ groupFeatureComp <- function(features, modelMatrix, contrastMat, adjpval = "fdr"
     }
     return(fittables)
 }
+#'@title Annotate Data
+#'@author Jordi Rofes Herrera
+#'@description Annotates an ExpressionSet, SummarizedExperiment or comparison table.
+#'@param features An ExpressionSet, SummarizedExperiment
+#'@param tableList A list of comparison tables
+#'@param anotpackage An annotation package for the corresponding microarray
+#'@param metabList A list of metabolites for each feature
+#'@return Returns an annotated ExpressionSet, SummarizedExperiment or comparison tables
 #'@export
 setGeneric("annotateData", function(features, tableList, anotpackage, metabList){
     standardGeneric("annotateData")
@@ -199,6 +273,14 @@ annotateTable <- function(feat_dt, anotpackage){
     return(genes_anotat)
 
 }
+#'@title Volcano plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a volcano plot for a comparison table
+#'@param comptable A comparison table
+#'@param adj.pvalue Boolean indicating if the adjusted p-values will be used
+#'@param interactive Boolean indicating if a plotly will be output instead of a ggplot
+#'@param jitterseed A seed for the random jitter to avoid names overlaps
+#'@return Returns filtered gene features
 #'@export
 groupFeatureVolcano <- function(comptable, adj.pvalue = TRUE, interactive = TRUE, jitterseed = 123){
     compname <- comptable$compname[1]
@@ -253,7 +335,14 @@ sampleFilter <- function(features, groupvar, groupname, maxmv){
     return(features)
 }
 
+#'@title Feature Sign
+#'@author Jordi Rofes Herrera
+#'@description Uses the biosign function from the biosigner package to create a biosign object for the given features
+#'@param features An ExpressionSet or SummarizedExperiment object
+#'@param groupvar A string or numeric indicating the group variable in the phenodata for classification (two factor only).
+#'@return Returns a biosign object
 #'@export
+
 # Machine learning feature selection
 featureSign <- function(features, groupvar, boot){
     feat_dt <- t(extractData(features))
@@ -262,6 +351,14 @@ featureSign <- function(features, groupvar, boot){
     return(mod)
 }
 
+#'@title Feature Selection
+#'@author Jordi Rofes Herrera
+#'@description Filters features depending on it's score in a biosign model
+#'@param features An ExpressionSet or SummarizedExperiment object
+#'@param biosigndata A biosign object
+#'@param model A numeric/string vector indicating the models from which the scores will be used.
+#'@param scoremin The minimum score to select the features "A", "S", "B".
+#'@return Returns a filtered ExpressionSet or SummarizedExperiment object.
 #'@export
 featureSelection <- function(features, biosigndata, model = 1, scoremin = "A"){
     lev <- c("E", "B", "A", "S")

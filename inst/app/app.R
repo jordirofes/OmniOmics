@@ -36,6 +36,7 @@ ui <- dashboardPage(
     dashboardSidebar(
         sidebarMenu(
             menuItem("Data Import", tabName = "importData", icon = icon("th")),
+            menuItem("Spectra Visualization", tabName = "metabVis", icon = icon("th")),
             menuItem("Object Data", tabName = "objectData", icon = icon("th")),
             menuItem("Data Processing", tabName = "procData", icon = icon("th")),
             menuItem("Batch Correction", tabName = "batchCorr", icon = icon("th")),
@@ -47,6 +48,7 @@ ui <- dashboardPage(
     dashboardBody(
         tabItems(
             tabItem(tabName = "importData", importUI("import")),
+            tabItem(tabName = "metabVis", importUI("metVis")),
             tabItem(tabName = "objectData", objectDataUI("objectDt")),
             tabItem(tabName = "procData", processUI("proc")),
             tabItem(tabName = "batchCorr", batchUI("corr")),
@@ -77,6 +79,7 @@ server <- function(input, output, session){
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
     objectDataServer("objectDt", objectList)
+    metaboVisServer("metVis", objectList)
 
     returnProc <- processServer("proc", objectList)
     observeEvent(returnProc$trigger, {

@@ -21,9 +21,6 @@ Returns a processed ExpressionSetIllumina for illumina data or an
 Normalizes a GeneFeatureSet using the RMA method or an
  ExpressionSetIllumina using the selected methodology
 }
-\examples{
-plot_crayons()
-}
 \author{
 Jordi Rofes Herrera
 }

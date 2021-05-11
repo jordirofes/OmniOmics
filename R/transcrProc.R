@@ -13,8 +13,6 @@
 #'@param ytrans A transformation applied to the represented intensities, usually
 #'  log2 for microarray analysis
 #'@return Returns a ggplot object or a ggplotly
-#'@examples
-#'plot_crayons()
 #'@export
 ggExprDistrPlot <- function(object, violin = TRUE, groupvar, interactive = TRUE,
                             nsamp = 100000, ytrans = "log2"){
@@ -49,8 +47,6 @@ ggExprDistrPlot <- function(object, violin = TRUE, groupvar, interactive = TRUE,
 #'@param xtrans A transformation applied to the represented intensities, usually
 #'  log2 for microarray analysis
 #'@return Returns a ggplot object or a ggplotly
-#'@examples
-#'plot_crayons()
 #'@export
 ggDensityPlot <- function(object, groupvar, interactive = TRUE, nsamp = 10000,
                           ytrans = NA, xtrans = "log2"){
@@ -84,8 +80,6 @@ ggDensityPlot <- function(object, groupvar, interactive = TRUE, nsamp = 10000,
 #'@param scale A boolan indicating if the PCA will be scaled, (the default is
 #'  TRUE).
 #'@return Returns a ggplot object or a ggplotly
-#'@examples
-#'plot_crayons()
 #'@export
 ggPCAplot <- function(object, pc = c(1,2), groupvar,
                         scale = TRUE, interactive = TRUE){
@@ -110,8 +104,6 @@ ggPCAplot <- function(object, pc = c(1,2), groupvar,
 #'@param groupvar A numeric indicating the column to use as grouping factor or a
 #'  character indicating it's name
 #'@return Returns an object with the expression data.
-#'@examples
-#'plot_crayons()
 #'@export
 transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ","){
     # Searches fot a geo dataset if the geoid argument is not missing
@@ -178,8 +170,6 @@ list.idatfiles <- function(...){
 #'  "quantile", "qspline", "vsn", "rankInvariant", "median" and "none".
 #'@return Returns a processed ExpressionSetIllumina for illumina data or an
 #'  ExpressionSet
-#'@examples
-#'plot_crayons()
 #'@export
 setGeneric("procTranscript", function(object, method, annotationTable){
     standardGeneric("procTranscript")

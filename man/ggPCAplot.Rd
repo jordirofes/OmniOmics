@@ -28,9 +28,6 @@ Returns a ggplot object or a ggplotly
 Creates a PCA plot from a microarray object with `exprs()` such
  as an ExpressionSet
 }
-\examples{
-plot_crayons()
-}
 \author{
 Jordi Rofes Herrera
 }

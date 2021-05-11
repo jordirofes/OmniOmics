@@ -1,3 +1,17 @@
+#'@title Basic group comparison
+#'@author Jordi Rofes Herrera
+#'@description Compares different groups of features using log2(Fold-Change) and using
+#'the p-value from a t-test or wilcox test
+#'@param features An ExpressionSet or SummarizedExperiment object
+#'@param groupvar A numeric or string indicating the variable from the phenodata
+#'from which the comparisons will be made
+#'@param elimlab An optional string of a variable name in groupvar indicating a
+#'group that will not be used for comparisons.
+#'@param test A string indicating the test to be perform: t-test or wilcox
+#'@param adj.method A string indicating the p-value adjust methodology for multiple testing
+#'@param paired A boolean indicating if the t-test should be paired or not
+#'@param var.equal A boolean indicating if the variance in the t-test are considered equal or not
+#'@return Returns a list of comparison tables for each pair of groups
 #'@export
 setGeneric("groupComp", function(features, groupvar, elimlab = "none", test,
                                 adj.method = "fdr", paired, var.equal = FALSE){
@@ -67,6 +81,20 @@ featureGroupTables <- function(features, groupvar, elimlab){
     return(group_tables)
 }
 
+#'@title Principal component analysis
+#'@author Jordi Rofes Herrera
+#'@description Calculates the PCA for a SummarizedExperiment or ExpressionSet
+#'@param features An ExpressionSet or SummarizedExperiment object
+#'@param prefuns An option string vector indicating pre-processing functions applied
+#'to the features before the PCA. Recommended for metabolomics data to impute missing values.
+#'Pre-processing functions available are "pqn" normalization, "sum" normalization, "glog"
+#'transformation and "mvImp" multivariate imputation
+#'@param method A string indicating the multivariate imputation method. Usually "knn" or "rf"
+#'@param groupvar A numeric or string indicating the variable from the phenodata with the QC
+#'samples to apply the pre-processing functions that require QC.
+#'@param qcname The QC name from the groupvar
+#'@param scale Boolean indicating if the pca should be scaled or not.
+#'@return A prcomp object
 #'@export
 setGeneric("multipca", function(features, prefuns, method, groupvar, qcname, scale = TRUE, ...){
     standardGeneric("multipca")
@@ -82,6 +110,20 @@ setMethod("multipca", definition = function(features, prefuns, method, groupvar,
     pcdt <- prcomp(t(dt), scale = scale)
     return(pcdt)
 })
+#'@title Principal component analysis plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a scatter plot with the selected principal components
+#'@param pcdt The prcomp object to use for plotting
+#'@param object The ExpressionSet or SummarizedExperiment object used when creating the PCA
+#'@param pc A length two vector with the principal components to be plot in each axis (x, y).
+#'@param groupvar A numeric or string indicating the variable from the phenodata with the QC
+#'samples to apply the pre-processing functions that require QC.
+#'@param interactive Boolean indicating if a plotly will be output instead of a ggplot
+#'@param ellipse A boolean indicating if a ellipse should be drawn
+#'@param ellipse.type The type of ellipse drawn. See ?stat_ellipse for more information
+#'@param level The confidence level of the ellipse
+#'@param bygroup A boolean indicating if ellipses should be drawn for each group. (If there are enough points)
+#'@return A ggplot2 or plotly pca scatter plot
 #'@export
 pcaPlot <- function(pcdt, object, pc = c(1,2), groupvar, interactive = TRUE,
                     ellipse = TRUE, ellipse.type = "t", level = 0.95,
@@ -119,6 +161,13 @@ pcaPlot <- function(pcdt, object, pc = c(1,2), groupvar, interactive = TRUE,
     }
     return(p)
 }
+#'@title Loadings Plot
+#'@author Jordi Rofes Herrera
+#'@description Creates dot chart with the loadings of selected principal component.
+#'@param pcdt The prcomp object to use for plotting
+#'@param pc A numeric indicating the principal component selected
+#'@param interactive Boolean indicating if a plotly will be output instead of a ggplot
+#'@return A ggplot2 or plotly dot plot with the loadings of selected principal component
 #'@export
 loadingsPlot <- function(pcdt, pc = 1, interactive = TRUE){
     dt <- data.frame(Features = rownames(pcdt$rotation),
@@ -134,6 +183,13 @@ loadingsPlot <- function(pcdt, pc = 1, interactive = TRUE){
     }
     return(p)
 }
+#'@title Heatmap plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a heatmap plot with clustering in both axis
+#'@param features A SummarizedExperiment or ExpressionSet
+#'@param groupvar A numeric or string indicating the variable from the phenodata
+#'to use as sample names.
+#'@return A heatmap plot
 #'@export
 heatmapPlot <- function(features, groupvar){
     feature_dt <- extractData(features)
@@ -146,8 +202,14 @@ heatmapPlot <- function(features, groupvar){
             tracecol = NULL, srtCol = 30, labCol = group_dt)
     return(p)
 }
-
-
+#'@title Feature comparison plot
+#'@author Jordi Rofes Herrera
+#'@description Creates a box plot for each selected features to compare groups.
+#'@param features A SummarizedExperiment or ExpressionSet
+#'@param subset A numeric vector indicating a subset of features to plot
+#'@param groupvar A numeric or string indicating the variable from the phenodata
+#'to compare
+#'@return A ggplot2 object
 #'@export
 setGeneric("compPlot", function(features, subset, groupvar, ...){
     standardGeneric("compPlot")

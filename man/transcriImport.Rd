@@ -32,9 +32,6 @@ Imports .idat, .cel files from microarray expression data into
  their respective formats and the download of geoDatasets. To import illumina
  datasets it is required the appropiate annotation package
 }
-\examples{
-plot_crayons()
-}
 \author{
 Jordi Rofes Herrera
 }
