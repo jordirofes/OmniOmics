@@ -19,13 +19,13 @@ multiAnalyUI <- function(id){
                 ),
                 fluidRow(
                     column(width = 4,
-                        selectInput(inputId = ns("pc1"), label = "PCs to plot:", choices = ""),
-                        selectInput(inputId = ns("pc2"), label = "", choices = ""),
+                        selectizeInput(inputId = ns("pc1"), label = "PCs to plot:", choices = "1"),
+                        selectizeInput(inputId = ns("pc2"), label = "", choices = "2"),
                         switchInput(inputId = ns("grouped"), label = "By group")
 
                     ),
                     column(width = 4,
-                        selectInput(inputId = ns("pcload"), label = "Loading PC:", choices = "")
+                        selectizeInput(inputId = ns("pcload"), label = "Loading PC:", choices = "", selected = 1)
                     )
                 ),
                 fluidRow(

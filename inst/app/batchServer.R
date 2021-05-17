@@ -15,12 +15,13 @@ batchServer <- function(id, objectList){
 
             observeEvent({input$object},{
                 obj <- objectList$objects[[as.numeric(input$object)]]
+
                 pheno_names <- colnames(extractPhenoData(obj))
-                updateRadioButtons(inputId = "phenoVar", choices = pheno_names)
+                updateRadioButtons(inputId = "phenoVar", choiceNames = pheno_names, selected = character(0), choiceValues = 1:length(colnames(extractPhenoData(obj))))
                 updateRadioButtons(inputId = "ordVar", choices = c("Default", pheno_names))
                 updateRadioButtons(inputId = "batchVar", choices = c("Default", pheno_names))
-                updateRadioButtons(inputId = "phenoVar2", choices = pheno_names)
-                updateRadioButtons(inputId = "groupVar", choices = pheno_names)
+                updateRadioButtons(inputId = "phenoVar2", choiceNames = pheno_names, selected = character(0), choiceValues = 1:length(colnames(extractPhenoData(obj))))
+                updateRadioButtons(inputId = "groupVar", choiceNames = pheno_names, choiceValues = 1:length(colnames(extractPhenoData(obj))))
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$groupVar,{
@@ -31,7 +32,8 @@ batchServer <- function(id, objectList){
 
             observeEvent({input$object2},{
                 obj <- objectList$objects[[as.numeric(input$object2)]]
-                pheno_names <- colnames(extractPhenoData(obj))
+                pheno_names <- 1:length(colnames(extractPhenoData(obj)))
+                names(pheno_names) <- colnames(extractPhenoData(obj))
                 updateSelectInput(inputId = "groupVar2", choices = pheno_names)
                 updateSelectInput(inputId = "phenoVar3", choices = pheno_names)
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
@@ -42,16 +44,19 @@ batchServer <- function(id, objectList){
                 updateSelectInput(inputId = "qcname2", choices = as.character(unique(varNames)))
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-            observeEvent(input$groupVar2, {
+            observeEvent({
+                input$groupVar2
+                input$phenoVar3
+                }, {
                 obj <- objectList$objects[[as.numeric(input$object2)]]
                 if(class(obj) == "SummarizedExperiment"){
                     output$injplot <- renderPlotly({
                         featurebatchQc(features = obj, groupvar = input$groupVar2,
-                                    qcname = input$qcname2, interactive = TRUE)
+                                    interactive = TRUE)
                     })
                 } else if(class(obj) == "ExpressionSet"){
                     output$covplot <- renderPlotly({
-                        featureBatchPVCA(features = obj, phenovars = input$phenoVar3,
+                        featureBatchPVCA(features = obj, phenovars = as.numeric(input$phenoVar3),
                                         threshold = input$thr)
                     })
                 }
@@ -66,12 +71,12 @@ batchServer <- function(id, objectList){
                     meth <- "qcnorm"
                 }
                 if(input$ordVar == "Default"){
-                    injOrder <- 1:nrow(obj)
+                    injOrder <- 1:ncol(obj)
                 } else{
                     injOrder <- extractPhenoData(obj)[[input$ordVar]]
                 }
                 if(input$batchVar == "Default"){
-                    batchOrd <- rep(1, nrow(obj))
+                    batchOrd <- rep(1, ncol(obj))
                 } else{
                     batchOrd <- extractPhenoData(obj)[[input$batchVar]]
                 }
@@ -82,8 +87,8 @@ batchServer <- function(id, objectList){
                 sendSweetAlert(title = "Data Loading",
                                 text = "Your data was batch corrected successfully!",
                                 type = "success", session = session)
+                returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$object)], "_BC")
                 returnData$trigger <- returnData$trigger + 1
-                returnData$objectNames <- paste0(objectNames, "_BC")
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
             return(returnData)
         }

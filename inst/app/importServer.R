@@ -55,7 +55,7 @@ importServer <- function(id, objectList){
                         )
                     )
                 }, )
-                updateRadioButtons(inputId = "phenoVar", choices = colnames(phenoData()))
+                updateRadioButtons(inputId = "phenoVar", choices = c("rownames", colnames(phenoData())))
             }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
             loadedData <- reactive({
@@ -63,7 +63,7 @@ importServer <- function(id, objectList){
                 input$dt
             })
 
-            shinyFileChoose(input, "dt_path", root=getVolumes(), filetypes=c("", "mzXML", "mzML"))
+            shinyFileChoose(input, "dt_path", root=getVolumes(), filetypes=c("", "mzXML", "mzML", "CEL"))
 
             data_paths <- reactive({
                     parseFilePaths(roots = getVolumes(), selection = input$dt_path)$datapath
@@ -85,8 +85,7 @@ importServer <- function(id, objectList){
                                                 phenodata = isolate(phenoData()),
                                                 injectionvar = isolate({input$phenoVar}))
                 } else if(isolate(input$omic) == "Transcriptomics"){
-                    validate(need(ext == "cel", message = "",
-                                message = "Input a valid transcriptomic data file"))
+                    validate(need(ext == "cel", message = ""))
                     returnData$object <- transcriImport(datapath = isolate(data_paths()),
                                     phenodata = isolate(phenoData()),
                                     geoid = isolate(input$geoData))
@@ -126,6 +125,34 @@ importServer <- function(id, objectList){
                     returnData$objectName <- input$fileName2
                 }
             }, ignoreNULL = TRUE, ignoreInit = TRUE, priority = 1)
+
+            observeEvent({
+                objectList$objects},{
+                    objectNames <- 1:length(objectList$objects)
+                    names(objectNames) <- names(objectList$objects)
+                    updateSelectInput(inputId = "object",  choices = objectNames)
+            }, ignoreInit = TRUE, ignoreNULL = TRUE)
+
+            shinyFileSave(input, "folder", roots= getVolumes(), filetypes=c(""))
+            save_path <- reactive(parseSavePath(getVolumes(), input$folder)$datapath)
+
+            output$dir_name <- renderPrint({
+                if(length(save_path()) == 0){
+                    "No files selected"
+                } else{
+                    save_path()
+                }
+            })
+
+            observeEvent(input$save_data, {
+                validate(need(input$folder, message = ""))
+                validate(need(input$object, message = ""))
+                obj <- objectList$objects[as.numeric(input$object)]
+                saveRDS(object = obj, file = paste0(save_path(), ".rds"))
+                sendSweetAlert(title = "Data Saving",
+                                text = "Your data was saved successfully!",
+                                type = "success", session = session)
+            }, ignoreInit = TRUE, ignoreNULL = TRUE)
             return(returnData)
         }
     )

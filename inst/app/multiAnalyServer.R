@@ -37,26 +37,29 @@ multiAnalyServer <- function(id, objectList){
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent({
+                input$obj
                 input$pcaObj
-                input$object
             },{
                 obj <- objectList$objects[[as.numeric(input$object)]]
                 pcaObj <- objectList$objects[[as.numeric(input$pcaObj)]]
-
+                validate(need(input$object, message = ""))
+                validate(need(input$pcaObj, message = ""))
+                
                 if(class(pcaObj) == "prcomp"){
-                    updateSelectInput(inputId = "pc1", choices = 1:ncol(pcaObj$x))
-                    updateSelectInput(inputId = "pc2", choices = 1:ncol(pcaObj$x), selected = 2)
-                    updateSelectInput(inputId = "pcload", choices = 1:ncol(pcaObj$x))
+                    updateSelectizeInput(inputId = "pc1", choices = 1:ncol(pcaObj$x))
+                    updateSelectizeInput(inputId = "pc2", choices = 1:ncol(pcaObj$x), selected = 2)
+                    updateSelectizeInput(inputId = "pcload", choices = 1:ncol(pcaObj$x))
                     output$pcaPlot <- renderPlotly(pcaPlot(pcdt = pcaObj, object = obj,
                                                     pc = c(as.numeric(input$pc1), as.numeric(input$pc2)),
                                                     groupvar = input$groupVar, interactive = TRUE,
                                                     bygroup = input$grouped))
                 }
-            }, ignoreInit = TRUE, ignoreNULL = TRUE)
+            })
             observeEvent({input$pcload}, {
+                validate(need(input$pcload, message = ""))
                 pcaObj <- objectList$objects[[as.numeric(input$pcaObj)]]
                 output$loadPlot <- renderPlotly(loadingsPlot(pcdt = pcaObj, pc = as.numeric(input$pcload)))
-            })
+            }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent({
                 input$object2

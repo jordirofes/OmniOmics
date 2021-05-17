@@ -37,11 +37,11 @@ batchUI <- function(id){
                     conditionalPanel("input.batchNorm == 'Covariate'",
                         column(width = 4,
                                 radioButtons(inputId = ns("phenoVar"), label = "Covariate:",
-                                             choices = "")
+                                             choices = "", selected = character(0))
                         ),
                         column(width = 4,
                                 radioButtons(inputId = ns("phenoVar2"), label = "Second covariate (optional):",
-                                             choices = "")
+                                             choices = "",selected = character(0))
                         )
                     , ns = ns)
                 )
@@ -81,9 +81,6 @@ batchUI <- function(id){
                         column(width = 4,
                             selectInput(inputId = ns("groupVar2"), label = "QC/Sample/Blank variable:",
                                         choices = "")
-                        ),
-                        column(width = 4,
-                            selectInput(inputId = ns("qcname2"), label = "Select QC name", choices = "")
                         )
                     ),
                     fluidRow(

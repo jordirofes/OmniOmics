@@ -54,6 +54,7 @@ setMethod("mlFit",
 #'@return A confusion matrix
 #'@export
 mlPredictCM <- function(mlmod, newdt, prepro_obj, groupvar, posclass){
+    
     newdt2 <- t(extractData(newdt))
     if(!missing(prepro_obj)){
         newdt2 <- predict(prepro_obj, newdt2)
@@ -74,6 +75,7 @@ mlPredictCM <- function(mlmod, newdt, prepro_obj, groupvar, posclass){
 #'@return A ROC curve plot
 #'@export
 mlPredictROC <- function(mlmod, newdt, prepro_obj, groupvar, posclass){
+    
     newdt2 <- t(extractData(newdt))
     pred_dt <- predict(mlmod, newdt2, type = "prob")
     pred_dt <- pred_dt[,which(colnames(pred_dt) == posclass)]

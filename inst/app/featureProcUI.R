@@ -62,7 +62,7 @@ featureProcUI <- function(id){
                             , ns = ns),
                             conditionalPanel("input.prePro",
                                 selectInput(inputId = ns("preProFuns"), label = "",
-                                            choices = c("mvImp", "pqn", "glog", "sum"), multiple = TRUE),
+                                            choices = c("mvImp", "pqn", "glog", "sum", "blankfill"), multiple = TRUE),
                                 selectInput(inputId = ns("mvImpMeth"), label = "Multivariate imputation method:",
                                             choices = c("knn", "rf")), ns = ns)
                         ),

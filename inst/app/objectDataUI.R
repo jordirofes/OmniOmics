@@ -8,8 +8,13 @@ objectDataUI <- function(id, objectList = ""){
             )
         ),
         fluidRow(
-            column(width = 8, offset = 0,
+            column(width = 12, offset = 0,
                     verbatimTextOutput(outputId = ns("dt_info"), placeholder = TRUE)
+            )
+        ),
+        fluidRow(
+            column(width = 12,
+                    DTOutput(outputId = ns("extra_dt"))
             )
         )
     )

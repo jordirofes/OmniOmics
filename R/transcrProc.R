@@ -106,9 +106,10 @@ ggPCAplot <- function(object, pc = c(1,2), groupvar,
 #'@return Returns an object with the expression data.
 #'@export
 transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ","){
+    
     # Searches fot a geo dataset if the geoid argument is not missing
-    if(!missing(geoid) | !is.null(geoid)){
-        dt <- GEOquery::getGEO(geoid)
+    if(!missing(geoid) & !is.null(geoid) & !is.na(geoid) & geoid != ""){
+        # dt <- GEOquery::getGEO(geoid)
         if(dim(featureData(dt[[1]]))[2] == 0){
             stop("The selected accession entry data has no features")
         } else{
@@ -123,6 +124,9 @@ transcriImport <- function(datapath, phenodata, geoid, header = TRUE, sep = ",")
             } else if(grepl("\\.[xX][lL][sS][xX]?$", phenodata)){
                 phenodata <- read_excel(phenodata)
             }
+        }
+        if(class(phenodata) != "AnnotatedDataFrame"){
+            phenodata <- AnnotatedDataFrame(data = phenodata)
         }
     }
     if(dir.exists(datapath)){
@@ -181,8 +185,9 @@ setMethod("procTranscript", "ExpressionSetIllumina",
 })
 #'@export
 setMethod("procTranscript", "GeneFeatureSet", function(object, annotationTable){
+    library(annotation(object), character.only = TRUE)
     norm_gene <- oligo::rma(object)
-    if(!is.missing(annotationTable) & is.null(annotation(norm_gene))){
+    if(!missing(annotationTable)){
         annotation(norm_gene) <- annotationTable
     }
     return(norm_gene)

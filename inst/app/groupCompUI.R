@@ -1,7 +1,7 @@
 groupCompUI <- function(id){
     ns <- NS(id)
     tabsetPanel(
-        tabPanel(
+        tabPanel(title = "Compare features",
             fluidPage(
                 fluidRow(
                     column(width = 4,
@@ -24,7 +24,7 @@ groupCompUI <- function(id){
                         ),
                         column(width = 4,
                             selectInput(inputId = ns("compTest"), label = "Select a test to compare groups:",
-                                        choices = c("t-test", "mann-whitney")),
+                                        choices = c("t-test", "wilcox")),
                             switchInput(inputId = ns("paired"), label = "Do a paired t-test"),
                             switchInput(inputId = ns("eqVar"), label = "Equal variance"),
                             selectInput(inputId = ns("adjMethod"), label = "Select a p-value adjust method:",
@@ -44,9 +44,9 @@ groupCompUI <- function(id){
                             actionButton(ns("contMatCalc"), label = "Calculate contrast matrix"),
                             textInput(inputId = ns("cont1"), label = "Input a contrast between groups (use the names of the comparison matrix):",
                                     placeholder = c("GroupA - GroupB")),
-                            textInput(inputId = ns("cont1"), label = "",
+                            textInput(inputId = ns("cont2"), label = "",
                                     placeholder = c("GroupC - GroupB")),
-                            textInput(inputId = ns("cont1"), label = "",
+                            textInput(inputId = ns("cont3"), label = "",
                                     placeholder = c("(GroupA - GroupB) - (GroupC - Group)"))
                         ),
                         column(width = 4,
@@ -63,6 +63,37 @@ groupCompUI <- function(id){
                         )
                     )
                 ,ns = ns)
+            )
+        ),
+        tabPanel(title = "Annotate Data",
+            fluidPage(
+                fluidRow(
+                    column(width = 4,
+                        selectInput(inputId = ns("object3"), label = "Select an object to process:",
+                                    choices = "")
+                    ),
+                    column(width = 4,
+                        selectInput(inputId = ns("omic2"), label = "Select group comparison methodology:",
+                                    choices = c("Metabolomics", "Transcriptomics"))
+                    ),
+                    column(width = 4,
+                        actionButton(inputId = ns("annotate"), label = "Annotate")
+                    )
+                ),
+                conditionalPanel("input.omic2 == 'Metabolomics'",
+                    fluidRow(
+                        fileInput(inputId = ns("metList"), label = "Input .csv metabolite list:",
+                            buttonLabel = "Load")
+                    )
+                , ns = ns),
+                conditionalPanel("input.omic2 == 'Transcriptomics'",
+                    fluidRow(
+                        column(width = 4,
+                            selectInput(inputId = ns("annotPack"), label = "Select an annotation package:",
+                                        choices = "")
+                        )
+                    )
+                , ns = ns)
             )
         ),
         tabPanel(title = "Volcano Plot",
@@ -95,7 +126,7 @@ groupCompUI <- function(id){
                                     choices = "")
                     ),
                     column(width = 4,
-                        selectInput(inputId = ns("feature"), label = "Feature to compare:",
+                        selectizeInput(inputId = ns("feature"), label = "Feature to compare:",
                                     choices = "")
                     )
                 ),

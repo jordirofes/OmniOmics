@@ -16,15 +16,31 @@ processServer <- function(id, objectList){
             observeEvent({input$object},{
                 obj <- objectList$objects[[as.numeric(input$object)]]
                 pheno_names <- colnames(extractPhenoData(obj))
-                updateRadioButtons(inputId = "phenoVar", choices = pheno_names)
-                if(class(objectList$objects[[input$object]]) == "onDiskMSnExp"){
+                updateSelectInput(inputId = "phenoVar", choices = pheno_names)
+                if(class(obj) == "OnDiskMSnExp"){
+                    dt_files <- 1:length(basename(fileNames(obj)))
+                    names(dt_files) <- basename(fileNames(obj))
                     updateSelectInput(inputId = "cliqueSample",
-                                    choices = basename(fileNames(obj)))
+                                    choices = dt_files)
+                }
+                if(class(obj) == "GeneFeatureSet"){
+                    packages <- installed.packages()[,1]
+                    annotPack <- packages[grep(".db$", packages)]
+
+                    validate(need(length(annotPack) != 0, message = "No annotation packages detected"))
+
+                    selectedAnnotPack <- annotPack[1]
+
+                    if(annotation(obj) %in% annotPack){
+                        selectedAnnotPack <- annotation(obj)
+                    }
+                    updateSelectInput(inputId = "database", choices = annotPack, selected = selectedAnnotPack)
                 }
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent({input$objectDt}, {
                 obj <- objectList$objects[[as.numeric(input$objectDt)]]
+                validate(need(class(obj) == "OnDiskMSnExp" | class(obj) == "MSnExp", message = ""))
                 pheno_names <- colnames(extractPhenoData(obj))
                 file_names <- 1:length(fileNames(obj))
                 names(file_names) <- basename(fileNames(obj))
@@ -39,9 +55,8 @@ processServer <- function(id, objectList){
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent({input$objectDt}, {
-                browser()
                 obj <- objectList$objects[[as.numeric(input$objectDt)]]
-                if(class(obj) == "OnDiskMSnEx" | class(obj) == "MSnEx" | class(obj) == "XCMSnExp"){
+                if(class(obj) == "OnDiskMSnExp" | class(obj) == "MSnExp" | class(obj) == "XCMSnExp"){
                     output$ggtic <- renderPlotly({
                         ggTicQuality(object = obj,
                                 pheno_var = input$groupVar, pheno_filter = input$groupFilt,
@@ -70,9 +85,8 @@ processServer <- function(id, objectList){
                                                 snthresh = input$snr, ppm = input$ppm, expandrt = input$expandrt,
                                                 binsize = input$binsize, minFraction = input$minfrac,
                                                 bw = input$binwidth, annotation = input$annotation,
-                                                cliqsamp = input$cliqueSample, mergepeaks = input$peakmerge,
-                                                rtadjust = input$rtcorrect, group = TRUE, fill = input$peakfill,
-                                                summ = TRUE)
+                                                cliqsamp = as.numeric(input$cliqueSample), mergepeaks = input$peakmerge,
+                                                rtadjust = input$rtcorrect, group = TRUE, fill = input$peakfill)
                     returnData$objectNames <- paste0(objectName, "_processed")
                     if(input$annotation == "cliqueMS"){
                         returnData$objectNames <- c(returnData$objectNames, paste0(objectName, "_cliqueAnObj"))

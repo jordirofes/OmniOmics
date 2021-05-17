@@ -1,4 +1,4 @@
-metaboVistServer <- function(id, objectList){
+metaboVisServer <- function(id, objectList){
     moduleServer(id,
         function(input, output, session){
             observeEvent({
@@ -18,18 +18,29 @@ metaboVistServer <- function(id, objectList){
                 file_names <- 1:length(basename(fileNames(obj)))
                 names(file_names) <- basename(fileNames(obj))
                 updateSelectInput(inputId = "files", choices = file_names)
-                rt_max <- max(rtime(obj[[1]]))
-                rt_min <- min(rtime(obj[[1]]))
-                updateNumericInput(inputId = "rt", min = rt_min, max = rt_max, value = c(rt_min, rt_max))
-
+                rt_max <- round(max(obj@featureData@data$retentionTime), 5)
+                rt_min <- round(min(obj@featureData@data$retentionTime), 5)
+                updateSliderInput(inputId = "rt", min = rt_min, max = rt_max, value = c(rt_min, rt_max))
+                mz_min <- round(min(obj@featureData@data$lowMZ), 5)
+                mz_max <- round(max(obj@featureData@data$highMZ), 5)
+                updateNumericInput(inputId = "mz2", min = mz_min, max = mz_max, value = ((mz_min + mz_max)/2), step = 0.0001)
+                updateSliderInput(inputId = "mz1", min = mz_min, max = mz_max, value = c(mz_min, mz_max), step = 0.0001)
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-            observeEvent(input$object, {
+            observe({
+                validate(need(input$object, message = ""))
+                validate(need(input$files, message = ""))
                 obj <- objectList$objects[[as.numeric(input$object)]]
+                if(input$byrange){
+                    mz <- input$mz1
+                } else{
+                    mz <- input$mz2
+                }
                 output$chromplot <- renderPlotly({
-                    ggChromPlot(object = obj, filenum = input$files,
-                                mz = input$mz, ppm = input$ppm, rtint = input$rt,
-                                pheno_var = input$groupVar, chromtype = input$chromtype)
+                    ggChromPlot(object = obj, filenum = as.numeric(input$files),
+                                mz = mz, ppm = input$ppm, rtint = input$rt,
+                                pheno_var = input$groupVar, chromtype = input$chromtype,
+                                logscale = input$log)
                 })
             })
         }

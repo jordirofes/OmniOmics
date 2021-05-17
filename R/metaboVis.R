@@ -201,7 +201,11 @@ findOrder <- function(files, phenodata, pheno_var){
     samp <- sub(pattern = "\\.[mM][zZ][xX]?[mM][lL]$", replacement = "",
                 x =  basename(files))
     if(length(pheno_var) == 1){
-        ordering <- phenodata[[pheno_var]]
+        if(pheno_var == "rownames"){
+            ordering <- rownames(phenodata)
+        } else{
+            ordering <- phenodata[[pheno_var]]
+        }
     } else{
         ordering <- pheno_var
     }

@@ -18,6 +18,10 @@ library(gplots)
 library(DT)
 library(limma)
 library(ggpubr)
+library(oligo)
+library(pvca)
+library(pd.mogene.2.1.st)
+library(ROCR)
 
 i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
 i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
@@ -48,7 +52,7 @@ ui <- dashboardPage(
     dashboardBody(
         tabItems(
             tabItem(tabName = "importData", importUI("import")),
-            tabItem(tabName = "metabVis", importUI("metVis")),
+            tabItem(tabName = "metabVis", metaboVisUI("metVis")),
             tabItem(tabName = "objectData", objectDataUI("objectDt")),
             tabItem(tabName = "procData", processUI("proc")),
             tabItem(tabName = "batchCorr", batchUI("corr")),
@@ -65,14 +69,13 @@ server <- function(input, output, session){
 
     objectList <- reactiveValues(objects = list())
 
-    returnImport <- importServer("import")
+    returnImport <- importServer("import", objectList)
     observeEvent(returnImport$trigger,{
-        if(class(returnImport$object) != "list"){
+        if(class(returnImport$object) == "list"){
             objectListed <- isolate(returnImport$object)
         } else{
             objectListed <- list(isolate(returnImport$object))
         }
-        objectListed <- isolate(returnImport$object)
         names(objectListed) <- isolate(returnImport$objectName)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
         # objectList$len <- length(isolate(objectList$objects))
@@ -83,14 +86,20 @@ server <- function(input, output, session){
 
     returnProc <- processServer("proc", objectList)
     observeEvent(returnProc$trigger, {
-        objectListed <- isolate(returnProc$object)
+        
+        if(class(returnProc$object) == "list"){
+            objectListed <- isolate(returnProc$object)
+        } else{
+            objectListed <- list(isolate(returnProc$object))
+        }
         names(objectListed) <- isolate(returnProc$objectNames)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
 
     returnBatch <- batchServer("corr", objectList)
     observeEvent(returnBatch$trigger, {
-        objectListed <- isolate(returnBatch$object)
+
+        objectListed <- list(isolate(returnBatch$object))
         names(objectListed) <- isolate(returnBatch$objectNames)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
@@ -104,7 +113,7 @@ server <- function(input, output, session){
 
     returnGroupComp <- groupCompServer("gComp", objectList)
     observeEvent(returnGroupComp$trigger, {
-        objectListed <- list(isolate(returnGroupComp$object))
+        objectListed <- isolate(returnGroupComp$object)
         names(objectListed) <- isolate(returnGroupComp$objectNames)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
@@ -118,7 +127,12 @@ server <- function(input, output, session){
 
     returnMachineLearn <- machineLearnServer("ml", objectList)
     observeEvent(returnMachineLearn$trigger, {
-        objectListed <- list(isolate(returnMachineLearn$object))
+        
+        if(class(returnMachineLearn$object) == "list"){
+            objectListed <- isolate(returnMachineLearn$object)
+        } else{
+            objectListed <- list(isolate(returnMachineLearn$object))
+        }
         names(objectListed) <- isolate(returnMachineLearn$objectNames)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)

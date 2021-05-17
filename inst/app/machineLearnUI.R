@@ -13,7 +13,7 @@ machineLearnUI <- function(id){
                     column(width = 4,
                            numericInput(inputId = ns("trainSize"), label = "Train set size:",
                                         value = 0.7, min = 0, max = 1, step = 0.01),
-                           numericInput(inputId = ns("randSeed"), label = "Train set size:",
+                           numericInput(inputId = ns("randSeed"), label = "Random seed for training:",
                                         value = 123, min = 0, max = 1000000, step = 1)
                     ),
                     column(width = 4,

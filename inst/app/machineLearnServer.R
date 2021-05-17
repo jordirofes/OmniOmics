@@ -28,22 +28,24 @@ machineLearnServer <- function(id, objectList){
                 updateSelectInput(inputId = "groupVar2", choices = pheno_names)
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-            observeEvent(input$groupVar,{
+            observeEvent(input$groupVar2,{
                 obj <- objectList$objects[[as.numeric(input$testSet)]]
-                varNames <- extractPhenoData(obj)[[input$groupVar]]
-                updateSelectInput(inputId = "groupVar2", choices = as.character(unique(varNames)))
+                varNames <- extractPhenoData(obj)[[input$groupVar2]]
+                updateSelectInput(inputId = "posClass", choices = as.character(unique(varNames)))
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$partition,{
+                
                 obj <- objectList$objects[[as.numeric(input$object)]]
                 set.seed(input$randSeed)
-                train <- sample(1:nrow(obj), size = input$trainSize, replace = FALSE)
-                returnData$object <- list(obj[train,], obj[-train])
+                train <- sample(1:ncol(obj), size = round(ncol(obj)*input$trainSize), replace = FALSE)
+                returnData$object <- list(obj[,train], obj[,-train])
                 returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$object)], c("_train_", "_test_"), c(input$trainSize, 1 - input$trainSize))
                 returnData$trigger <- returnData$trigger + 1
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$biosignMod,{
+                
                 obj <- objectList$objects[[as.numeric(input$trainSet)]]
                 returnData$object <- featureSign(features = obj, groupvar = input$groupVar)
                 returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$trainSet)], "_sign")
@@ -51,6 +53,7 @@ machineLearnServer <- function(id, objectList){
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$trainMod,{
+                
                 obj <- objectList$objects[[as.numeric(input$trainSet)]]
                 returnData$object <- mlFit(dt = obj, groupvar = input$groupVar,
                                         method = input$mod,metric = input$metric,
@@ -58,7 +61,7 @@ machineLearnServer <- function(id, objectList){
                                         ntimes = input$partitions, preproc = input$prepro,
                                         tlength = input$tuneLength)
                 returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$trainSet)], "_",input$mod)
-                returnData$triger <- returnData$triger + 1
+                returnData$trigger <- returnData$trigger + 1
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$plot,{

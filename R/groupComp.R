@@ -21,9 +21,14 @@ setGeneric("groupComp", function(features, groupvar, elimlab = "none", test,
 setMethod("groupComp", definition = function(features, groupvar,
                                             elimlab = "none", test, adj.method,
                                             paired, var.equal = FALSE){
-    group_tables <- featureGroupTables(features, groupvar, elimlab)
+
     groupvar <- extractPhenoData(features)[[groupvar]]
+    if(elimlab == "NA"){elimlab <- NA}
+    if(is.na(elimlab)){ elimlab <- "other"}
+    if(any(is.na(groupvar))){ groupvar[is.na(groupvar)] <- "other"}
+    group_tables <- featureGroupTables(features, groupvar, elimlab)
     comp_tables <- list()
+    groupvar <- groupvar[groupvar != elimlab]
     for(i in seq_along(group_tables)){
         for(j in seq_along(group_tables)){
             if(j < i){
@@ -66,12 +71,11 @@ matComp <- function(mat1, mat2, test, adj.method = "fdr", paired = FALSE,
     cm$t.stad <- tt[,1]
     cm$P.Value <- tt[,2]
     cm$adj.P.Val <- p.adjust(cm$P.Value, method = adj.method)
-    cm$compname <- rep(paste(gr[1], "VS", gr[2]), ncol(mat1))
+    cm$compname <- rep(paste0(gr[1], "_VS_", gr[2]), ncol(mat1))
     return(cm)
 }
 #'@export
 featureGroupTables <- function(features, groupvar, elimlab){
-    groupvar <- extractPhenoData(features)[[groupvar]]
     feature_dt <- extractData(features)
     group_tables <- lapply(unique(groupvar)[unique(groupvar) != elimlab],
                             function(x){
@@ -169,9 +173,12 @@ pcaPlot <- function(pcdt, object, pc = c(1,2), groupvar, interactive = TRUE,
 #'@param interactive Boolean indicating if a plotly will be output instead of a ggplot
 #'@return A ggplot2 or plotly dot plot with the loadings of selected principal component
 #'@export
-loadingsPlot <- function(pcdt, pc = 1, interactive = TRUE){
-    dt <- data.frame(Features = rownames(pcdt$rotation),
-                    Rotation = pcdt$rotation[,pc])
+loadingsPlot <- function(pcdt, pc = 1, interactive = TRUE, len = 100){
+    if(length(rownames(pcdt$rotation)) < len){
+        len <- length(rownames(pcdt$rotation))
+    }
+    dt <- data.frame(Features = rownames(pcdt$rotation)[1:len],
+                    Rotation = pcdt$rotation[1:len,pc])
     p <- ggdotchart(dt, x = "Features", y = "Rotation", sorting = "ascending",
             add = "segments", ggtheme = theme_pubr()) +
         ggtitle(paste("PCA loading plot from pc", pc)) +

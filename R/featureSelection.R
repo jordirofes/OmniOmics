@@ -16,7 +16,7 @@ setGeneric("featureVarPlot", function(features, varfun, interactive = TRUE){
 #'@export
 setMethod("featureVarPlot", definition =  function(features, varfun, interactive){
     feat_dt <- extractData(features)
-    feat_sd <- sort(apply(feat_dt, 1, varfun))
+    feat_sd <- sort(apply(feat_dt, 1, varfun, na.rm = TRUE))
     feat_index <- 1:nrow(features)
     p <- varPlot(feat_index = feat_index, feat_sd = feat_sd,
                     interactive = interactive)
@@ -44,7 +44,7 @@ varPlot <- function(feat_index, feat_sd, interactive = TRUE){
 geneFeatureFilter <- function(features, entrez, rem.dupEntrez, varfilt, varcutoff, var.func){
     return(nsFilter(features, require.entrez = entrez, remove.dupEntrez = rem.dupEntrez,
                 var.filter = varfilt, var.func = var.func, var.cutoff = varcutoff,
-                filterByQuantile = TRUE))
+                filterByQuantile = TRUE)$eset)
 }
 # Metabolomic basic feature filtering
 #'@title Metablomics feature filter
@@ -83,6 +83,7 @@ geneFeatureFilter <- function(features, entrez, rem.dupEntrez, varfilt, varcutof
 #'"pqn" point quotien normalization, "sum" normalization to the sum and "mvImp" multivariate imputation.
 #'@param mvimpmethod A string indicating the multivariate imputation method: "knn" or "rf".
 #'@return Returns a SummarizedExperiment with filtered features
+#'@export
 metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                             blankFoldChange = 2, blankname = "blank",
                             samplename, cvqcfilt = FALSE,
@@ -93,9 +94,10 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
                             sampfilter = FALSE, maxmv, filtername, prepro,
                             preprofuns, mvimpmethod){
     dt_groups <- extractPhenoData(features)[[groupvar]]
+
     if(blankfilt){
         features <- filter_peaks_by_blank(features, blankFoldChange, dt_groups,
-                                        blankname, qcname, remove_peaks = TRUE,
+                                        blankname, remove_peaks = TRUE,
                                         remove_samples = TRUE)
         dt_groups <- extractPhenoData(features)[[groupvar]]
     }
@@ -131,6 +133,7 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
         features <- sampleFilter(features, groupvar = dt_groups,
                                 groupname = filtername, maxmv = maxmv)
     }
+
     return(features)
 }
 #' #'@export
@@ -256,6 +259,12 @@ setMethod("annotateData", c("ANY", "list", "character"), function(features, tabl
 })
 #'@export
 setMethod("annotateData", "ExpressionSet", function(features, tableList, anotpackage){
+    annotation <- annotateTable(features, anotpackage)
+    rownames(features) <- annotation$SYMBOL
+    return(features)
+})
+#'@export
+setMethod("annotateData", "data.frame", function(features, tableList, anotpackage){
     annotation <- annotateTable(features, anotpackage)
     rownames(features) <- annotation$SYMBOL
     return(features)
@@ -403,9 +412,9 @@ setMethod("extractPhenoData", "SummarizedExperiment", function(dt){
 })
 #'@export
 setMethod("extractPhenoData", "OnDiskMSnExp", function(dt){
-    return(phenoData(dt))
+    return(phenoData(dt)@data)
 })
 #'@export
 setMethod("extractPhenoData", "XCMSnExp", function(dt){
-    return(phenoData(dt))
+    return(phenoData(dt)@data)
 })
