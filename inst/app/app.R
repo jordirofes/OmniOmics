@@ -22,6 +22,8 @@ library(oligo)
 library(pvca)
 library(pd.mogene.2.1.st)
 library(ROCR)
+library(mogene21sttranscriptcluster.db)
+library(RColorBrewer)
 
 i <- list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "UI")
 i <- c(i, list.files(system.file("app", package = "OmniOmics"), full.names = TRUE, pattern = "Server"))
@@ -86,7 +88,7 @@ server <- function(input, output, session){
 
     returnProc <- processServer("proc", objectList)
     observeEvent(returnProc$trigger, {
-        
+
         if(class(returnProc$object) == "list"){
             objectListed <- isolate(returnProc$object)
         } else{
@@ -113,7 +115,11 @@ server <- function(input, output, session){
 
     returnGroupComp <- groupCompServer("gComp", objectList)
     observeEvent(returnGroupComp$trigger, {
-        objectListed <- isolate(returnGroupComp$object)
+        if(class(returnGroupComp$object) == "list"){
+            objectListed <- isolate(returnGroupComp$object)
+        } else{
+            objectListed <- list(isolate(returnGroupComp$object))
+        }
         names(objectListed) <- isolate(returnGroupComp$objectNames)
         objectList$objects <- c(isolate(objectList$objects), objectListed)
     }, ignoreInit = TRUE, ignoreNULL = TRUE, priority = 1)
@@ -127,7 +133,7 @@ server <- function(input, output, session){
 
     returnMachineLearn <- machineLearnServer("ml", objectList)
     observeEvent(returnMachineLearn$trigger, {
-        
+
         if(class(returnMachineLearn$object) == "list"){
             objectListed <- isolate(returnMachineLearn$object)
         } else{

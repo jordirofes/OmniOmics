@@ -39,13 +39,13 @@ groupCompServer <- function(id, objectList){
                 modMat <- model.mat(obj, phenovar = input$groupVar2)
                 output$compMat <- renderDataTable({
                     modMat
-                })
+                }, options = list(pageLength = 10, scrollX = TRUE))
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$contMatCalc,{
                 obj <- objectList$objects[[as.numeric(input$object)]]
                 modMat <- model.mat(obj, phenovar = input$groupVar2)
-                
+
                 contMat <- do.call(makeContrasts, list(input$cont1, input$cont2, input$cont3, levels = modMat))
                 output$contMat <- renderDataTable({
                     contMat
@@ -63,7 +63,7 @@ groupCompServer <- function(id, objectList){
                 validate(need(input$object2, message = ""))
                 obj <- objectList$objects[[as.numeric(input$object2)]]
                 output$featComp <- renderPlot({
-                    compPlot(obj, features = input$feature, groupvar = input$groupVar3)
+                    compPlot(obj, subset = as.numeric(input$feature), groupvar = input$groupVar3)
                 })
             }, ignoreNULL = TRUE, ignoreInit = TRUE)
             observeEvent(input$compare,{
@@ -74,9 +74,7 @@ groupCompServer <- function(id, objectList){
                                                 adj.method = input$adjMethod, paired = input$paired,
                                                 var.equal = input$eqVar)
 
-
                 } else if(input$omic == "Transcriptomics"){
-                    
                     modMat <- model.mat(obj, phenovar = input$groupVar2)
                     contMat <- do.call(makeContrasts, list(input$cont1, input$cont2, input$cont3, levels = modMat))
                     returnData$object <- groupFeatureComp(features = obj, modelMatrix = modMat,
@@ -87,11 +85,11 @@ groupCompServer <- function(id, objectList){
                 returnData$trigger <- returnData$trigger + 1
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-            observeEvent(input$object3, {
+            observeEvent({input$object3
+                input$omic2}, {
                 validate(need(input$object3, message = ""))
                 obj <- objectList$objects[[as.numeric(input$object3)]]
-                validate(need(class(obj) == "ExpressionSet", message = ""))
-
+                validate(need(obj, message = ""))
                 packages <- installed.packages()[,1]
                 annotPack <- packages[grep(".db$", packages)]
 
@@ -121,14 +119,13 @@ groupCompServer <- function(id, objectList){
             })
 
             observeEvent(input$annotate, {
-
                 validate(need(input$object3, message = ""))
                 validate(need(input$annotPack, message = ""))
-
                 obj <- objectList$objects[[as.numeric(input$object3)]]
-
-                returnData$object <- annotateData(features = obj, anotpackage = input$annot, metabList = metabData())
-                returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$object)], "_annotated")
+                do.call(library, list(input$annotPack))
+                returnData$object <- annotateData(features = obj, anotpackage = input$annotPack, metabList = metabData())
+                returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$object3)], "_annotated")
+                returnData$trigger <- returnData$trigger + 1
 
             }, ignoreNULL = TRUE, ignoreInit = TRUE)
             return(returnData)

@@ -72,7 +72,7 @@ batchUI <- function(id){
                     ),
                     fluidRow(
                         column(width = 12,
-                            plotlyOutput(ns("covplot"))
+                            plotOutput(ns("covplot"))
                         )
                     )
                 , ns = ns),

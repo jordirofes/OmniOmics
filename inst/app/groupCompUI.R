@@ -73,7 +73,7 @@ groupCompUI <- function(id){
                                     choices = "")
                     ),
                     column(width = 4,
-                        selectInput(inputId = ns("omic2"), label = "Select group comparison methodology:",
+                        selectInput(inputId = ns("omic2"), label = "Select an omic:",
                                     choices = c("Metabolomics", "Transcriptomics"))
                     ),
                     column(width = 4,

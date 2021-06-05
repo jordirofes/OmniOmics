@@ -55,7 +55,7 @@ batchServer <- function(id, objectList){
                                     interactive = TRUE)
                     })
                 } else if(class(obj) == "ExpressionSet"){
-                    output$covplot <- renderPlotly({
+                    output$covplot <- renderPlot({
                         featureBatchPVCA(features = obj, phenovars = as.numeric(input$phenoVar3),
                                         threshold = input$thr)
                     })
@@ -63,6 +63,7 @@ batchServer <- function(id, objectList){
             })
 
             observeEvent(input$batchBut,{
+                
                 obj <- objectList$objects[[as.numeric(input$object)]]
                 if(input$batchNorm == "Covariate"){
                     meth <- "covnorm"
@@ -82,8 +83,9 @@ batchServer <- function(id, objectList){
                 }
                 returnData$object <- batchNormalization(features = obj, method = meth,
                                         injectionorder = injOrder, batchnum = batchOrd,
-                                        groups = input$groupVar, qcname = input$qcname,
-                                        covariate = input$phenoVar, covariate2 = input$phenoVar2)
+                                        groups = as.numeric(input$groupVar), qcname = input$qcname,
+                                        covariate = as.numeric(input$phenoVar),
+                                        covariate2 = as.numeric(input$phenoVar2))
                 sendSweetAlert(title = "Data Loading",
                                 text = "Your data was batch corrected successfully!",
                                 type = "success", session = session)

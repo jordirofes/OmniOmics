@@ -89,10 +89,12 @@ machineLearnUI <- function(id){
                     )
                 ),
                 fluidRow(
-                    column(width = 6,
+                    column(width = 12,
                         verbatimTextOutput(outputId = ns("cm"))
-                    ),
-                    column(width = 6,
+                    )
+                ),
+                fluidRow(
+                    column(width = 12,
                         plotOutput(outputId = ns("roc"))
                     )
                 )

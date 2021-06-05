@@ -51,7 +51,6 @@ featurebatchQc <- function(features, groupvar, injectionvar,
 #'@return Returns a ggplot object or a ggplotly
 #'@export
 featureBatchPVCA <- function(features, phenovars, threshold){
-    
     covariates <- colnames(extractPhenoData(features))[phenovars]
     pvcadt <- pvcaBatchAssess(features, covariates, threshold)
     p <- ggStandardPlot(dt = pvcadt$dat, plabs = factor(pvcadt$label,
@@ -87,6 +86,7 @@ featureBatchPVCA <- function(features, phenovars, threshold){
 #'@export
 batchNormalization <- function(features, method, injectionorder, batchnum, groups,
                                 qcname, covariate, covariate2 = NULL){
+    
     if(method == "qcnorm"){
         if(length(injectionorder) == 1){
             injectionorder <- colData(features)[[injectionorder]]

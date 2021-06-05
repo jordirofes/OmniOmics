@@ -259,14 +259,17 @@ setMethod("annotateData", c("ANY", "list", "character"), function(features, tabl
 })
 #'@export
 setMethod("annotateData", "ExpressionSet", function(features, tableList, anotpackage){
+    features <- features[!is.na(rownames(features)),]
     annotation <- annotateTable(features, anotpackage)
-    rownames(features) <- annotation$SYMBOL
+    features <- features[!is.na(annotation$SYMBOL),]
+    rownames(features) <- annotation$SYMBOL[!is.na(annotation$SYMBOL)]
     return(features)
 })
 #'@export
 setMethod("annotateData", "data.frame", function(features, tableList, anotpackage){
     annotation <- annotateTable(features, anotpackage)
-    rownames(features) <- annotation$SYMBOL
+    features <- features[!is.na(annotation$SYMBOL),]
+    rownames(features) <- annotation$SYMBOL[!is.na(annotation$SYMBOL)]
     return(features)
 })
 #'@export

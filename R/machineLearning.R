@@ -34,13 +34,14 @@ setMethod("mlFit",
                             selectionFunction = "oneSE")
     mod <- train(dt2, grp, method = method, metric = metric,
                 tuneLength = tlength, trControl = control,
-                preProcess = preproc, )
+                preProcess = preproc)
     # rf_mod <- train(dt2, grp,method = "rf", metric = "Accuracy",
     #                 tuneLength = 20, trControl = control,
     #                 preProcess = c("zv", "center", "scale"))
     # svm_mod <- train(dt2, grp,method = "svmLinear", metric = "Accuracy",
     #                 tuneLength = 20, trControl = control,
     #                 preProcess = c("zv", "center", "scale"))
+    return(mod)
 })
 #'@title Caret confusion matrix
 #'@author Jordi Rofes Herrera
@@ -54,12 +55,14 @@ setMethod("mlFit",
 #'@return A confusion matrix
 #'@export
 mlPredictCM <- function(mlmod, newdt, prepro_obj, groupvar, posclass){
-    
     newdt2 <- t(extractData(newdt))
     if(!missing(prepro_obj)){
         newdt2 <- predict(prepro_obj, newdt2)
     }
     pred_dt <- predict(mlmod, newdt2)
+    if(class(pred_dt) == "data.frame"){
+        pred_dt <- unlist(pred_dt)
+    }
     newdt_labs <- extractPhenoData(newdt)[[groupvar]]
     cm <- confusionMatrix(table(pred_dt, newdt_labs), positive = posclass)
     return(cm)
@@ -78,6 +81,9 @@ mlPredictROC <- function(mlmod, newdt, prepro_obj, groupvar, posclass){
     
     newdt2 <- t(extractData(newdt))
     pred_dt <- predict(mlmod, newdt2, type = "prob")
+    if(class(pred_dt[1,1]) != "numeric"){
+        return()
+    }
     pred_dt <- pred_dt[,which(colnames(pred_dt) == posclass)]
     if(!missing(prepro_obj)){
         newdt2 <- predict(prepro_obj, newdt2)
