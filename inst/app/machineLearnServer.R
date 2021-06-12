@@ -48,14 +48,14 @@ machineLearnServer <- function(id, objectList){
             observeEvent(input$biosignMod,{
                 obj <- objectList$objects[[as.numeric(input$trainSet)]]
                 varNames <- extractPhenoData(obj)[[input$groupVar2]]
-                validate(need(length(unique(varNames)) == 2, message = "Variable must have two levels"))
+                # validate(need(length(unique(varNames)) == 2, message = "Variable must have two levels"))
                 returnData$object <- featureSign(features = obj, groupvar = input$groupVar)
                 returnData$objectNames <- paste0(names(objectList$objects)[as.numeric(input$trainSet)], "_sign")
                 returnData$trigger <- returnData$triger + 1
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
             observeEvent(input$trainMod,{
-                
+
                 obj <- objectList$objects[[as.numeric(input$trainSet)]]
 
                 returnData$object <- mlFit(dt = obj, groupvar = input$groupVar,
