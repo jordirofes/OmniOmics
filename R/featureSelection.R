@@ -136,29 +136,29 @@ metabFeatureFilter <- function(features, groupvar, blankfilt = FALSE,
 
     return(features)
 }
-#' #'@export
-#' blankFilter <- function(features, groupvar, samplename, blankname){
-#'     feat_dt <- extractData(features)
-#'     blank_int <- apply(feat_dt, 1, function(x){
-#'             s <- mean(x[colData(feat_dt)[[groupvar]] == samplename], na.rm = TRUE)
-#'             b <- mean(x[colData(feat_dt)[[groupvar]] == blankname], na.rm = TRUE)
-#'             if(is.nan(b)){b <- 0}
-#'             s/b > blank.int.ratio.thr
-#'         })
-#'     return(features[blank_int,])
-#' }
-#' #'@export
-#' cvFilterQC <- function(features, groupvar, samplename, qcname, qctimes = 2){
-#'     feat_dt <- extractData(features)
-#'     cv_samp_qc <- apply(feat_dt, 1, function(x){
-#'             samp_indx <- colData(feat_dt)[[groupvar]] == samplename
-#'             qc_indx <- colData(feat_dt)[[groupvar]] == qcname
-#'             s <- sd(x[samp_indx], na.rm = TRUE)/mean(x[samp_indx], na.rm = TRUE)
-#'             qc <- sd(x[qc_indx], na.rm = TRUE)/mean(x[qc_indx], na.rm = TRUE)
-#'             s > (qctimes*qc)
-#'         })
-#'     return(features[cv_samp_qc,])
-#' }
+#
+# blankFilter <- function(features, groupvar, samplename, blankname){
+#     feat_dt <- extractData(features)
+#     blank_int <- apply(feat_dt, 1, function(x){
+#             s <- mean(x[colData(feat_dt)[[groupvar]] == samplename], na.rm = TRUE)
+#             b <- mean(x[colData(feat_dt)[[groupvar]] == blankname], na.rm = TRUE)
+#             if(is.nan(b)){b <- 0}
+#             s/b > blank.int.ratio.thr
+#         })
+#     return(features[blank_int,])
+# }
+#
+# cvFilterQC <- function(features, groupvar, samplename, qcname, qctimes = 2){
+#     feat_dt <- extractData(features)
+#     cv_samp_qc <- apply(feat_dt, 1, function(x){
+#             samp_indx <- colData(feat_dt)[[groupvar]] == samplename
+#             qc_indx <- colData(feat_dt)[[groupvar]] == qcname
+#             s <- sd(x[samp_indx], na.rm = TRUE)/mean(x[samp_indx], na.rm = TRUE)
+#             qc <- sd(x[qc_indx], na.rm = TRUE)/mean(x[qc_indx], na.rm = TRUE)
+#             s > (qctimes*qc)
+#         })
+#     return(features[cv_samp_qc,])
+# }
 #'@export
 varfunFilter <- function(features, varfun, varquant, varthr, groupvar, samplename){
         feat_dt <- extractData(features)
