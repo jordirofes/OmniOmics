@@ -13,4 +13,23 @@ RoxygenNote: 7.1.1
 Suggests: 
     knitr,
     rmarkdown
+Imports:
+    CAMERA
+    SummarizedExperiment
+    beadarray
+    biosigner
+    caret
+    cliqueMS
+    dplyr
+    genefilter
+    ggplot2
+    limma
+    oligo
+    pmp
+    shiny
+    shinyFiles
+    shinyWidgets
+    xcms
+    xlsx
+    plotly
 VignetteBuilder: knitr
