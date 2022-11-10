@@ -119,6 +119,9 @@ importServer <- function(id, objectList){
                                 text = "Your data was loaded successfully!",
                                 type = "success", session = session)
                 returnData$trigger <- isolate(returnData$trigger) + 1
+                if(!is(returnData$object, class2 = "list")){
+                    returnData$object <- list(returnData$object)
+                }
                 if(length(returnData$object) != 1){
                     returnData$objectName <- paste0(input$fileName2, 1:length(returnData$object))
                 } else{

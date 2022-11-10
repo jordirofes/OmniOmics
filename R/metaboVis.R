@@ -51,7 +51,7 @@ ggChromPlot <- function(object, filenum = NA, mz = NA, ppm = NA, rtint = NA, phe
     } else{
         logscale <- NA
     }
-    if(is.na(rtint)){
+    if(any(is.na(rtint))){
         rtint <- c(min(xcms::rtime(object)), max(xcms::rtime(object)))
     }
     # Colors by sample names

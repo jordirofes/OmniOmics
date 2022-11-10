@@ -6,7 +6,7 @@ metaboVisServer <- function(id, objectList){
                     objectNames <- 1:length(objectList$objects)
                     names(objectNames) <- names(objectList$objects)
                     classDt <- lapply(objectList$objects, class)
-                    objectNames <- objectNames[which(classDt == "OnDiskMSnExp" | classDt == "MSnExp")]
+                    objectNames <- objectNames[which(classDt == "OnDiskMSnExp" | classDt == "MSnExp" | classDt == "XCMSnExp")]
                     updateSelectInput(inputId = "object",  choices = objectNames)
             }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
