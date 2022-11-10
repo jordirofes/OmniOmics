@@ -2,14 +2,15 @@ Package: OmniOmics
 Type: Package
 Title: Analysis of metabolomics (LC-MS) and transcriptomics (Microarray) data
 Version: 0.1.0
-Author: Jordi Rofes Herrera
-Maintainer: jordirofes493@gmail.com
+Authors@R: 
+    c(person("Jordi", "Rofes Herrera", email = "jordirofes493@gmail.com",
+            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3914-0233")))
 Description: The package contains functions to facilitate LC-MS metabolomics and 
-microarray transcriptomics data analysis and has a guided user interface to make all the analyses
-License: GPLv3
+    microarray transcriptomics data analysis and has a guided user interface to make all the analyses
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Suggests: 
     knitr,
     rmarkdown

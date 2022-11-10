@@ -4,7 +4,7 @@
 \alias{loadingsPlot}
 \title{Loadings Plot}
 \usage{
-loadingsPlot(pcdt, pc = 1, interactive = TRUE)
+loadingsPlot(pcdt, pc = 1, interactive = TRUE, len = 100)
 }
 \arguments{
 \item{pcdt}{The prcomp object to use for plotting}

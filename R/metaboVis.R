@@ -209,7 +209,7 @@ findOrder <- function(files, phenodata, pheno_var){
     } else{
         ordering <- pheno_var
     }
-    if(!all(samp %in% ordering)){
+    if(!all(ordering %in% samp)){
         stop("Filenames do not agree with the phenodata variable. Change the names accordingly")
     }
     return(order(sapply(samp, function(x){ which(ordering == x)})))
